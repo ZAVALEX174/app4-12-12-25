@@ -1,0 +1,327 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+  background-color: #f5f5f5;
+}
+
+.program-container {
+  display: grid;
+  gap: 20px;
+  max-width: 1920px;
+  padding: 0 50px;
+  margin: 0 auto;
+  align-items: flex-start;
+  flex-direction: column;
+  grid-template-columns: 350px 200px 1fr;
+  grid-template-rows: 300px 1fr;
+  grid-template-areas:
+    'ob ob ob1'
+    'reda can can';
+}
+
+.controls {
+  display: contents;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.controls-top {
+  grid-area: ob;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  height: 100%;
+}
+
+.controls-left {
+  grid-area: reda;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+}
+
+.group-top {
+  grid-area: ob1;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+}
+
+.canvas-container {
+  grid-area: can;
+  flex: 1;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+h1,
+h2,
+h3 {
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.control-group {
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.mode-btn,
+.color-btn,
+button {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mode-btn:hover,
+.color-btn:hover,
+button:hover {
+  background: #f0f0f0;
+}
+
+.mode-btn.active {
+  background: #3498db;
+  color: white;
+  border-color: #3498db;
+}
+
+.color-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  padding: 0;
+}
+
+.color-btn.active {
+  transform: scale(1.1);
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+}
+
+.status {
+  background: #f8f9fa;
+  padding: 10px;
+  border-radius: 4px;
+  margin-top: 10px;
+  font-size: 14px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.status-item {
+  margin-bottom: 5px;
+}
+
+#drawingCanvas {
+  border: 1px solid #ddd;
+  background: white;
+  cursor: crosshair;
+  flex: 1;
+  width: 100%;
+}
+
+.object-panel {
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 10px;
+  margin: 0;
+  background: #f9f9f9;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.object-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.category-btn {
+  padding: 5px 10px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.category-btn.active {
+  background: #3498db;
+  color: white;
+}
+
+.objects-grid {
+  display: grid;
+  grid-template-columns: repeat(16, 1fr);
+  gap: 8px;
+}
+
+.object-item {
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  padding: 2px 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  cursor: pointer;
+  background: white;
+}
+
+.object-item.selected {
+  border-color: #3498db;
+  background: #e3f2fd;
+}
+
+.object-icon {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 5px;
+}
+
+.object-icon img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+.object-name {
+  text-align: center;
+  font-size: 10px;
+  color: #666;
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 15px;
+}
+
+#clearAll {
+  background: #e74c3c;
+  color: white;
+}
+
+#showAllLines {
+  background: #2ecc71;
+  color: white;
+}
+
+#savePDF {
+  background: #9b59b6;
+  color: white;
+}
+
+.length-edit-overlay {
+  position: fixed;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.length-edit-overlay input {
+  padding: 5px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  width: 100px;
+}
+
+.length-edit-overlay button {
+  padding: 5px 10px;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+/* Стили для панели свойств */
+.properties-panel {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 5px;
+  margin-top: 10px;
+}
+
+.property-group {
+  margin-bottom: 15px;
+}
+
+.property-label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.property-input {
+  width: 100%;
+  padding: 6px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+.property-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.rotate-btn {
+  background: #f39c12;
+  color: white;
+  border: none;
+}
+
+.apply-btn {
+  background: #27ae60;
+  color: white;
+  border: none;
+}
+
+.cancel-btn {
+  background: #95a5a6;
+  color: white;
+  border: none;
+}
+
+.control-group.group-top {
+  margin-bottom: 0;
+}
+
+/* Стили для панели свойств линии */
+.line-properties-panel {
+  background: #f0f8ff;
+  padding: 15px;
+  border-radius: 5px;
+  margin-top: 10px;
+}
