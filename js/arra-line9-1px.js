@@ -1,3 +1,5 @@
+// пока лучший вариант
+
 // Базовый класс для всех объектов на холсте
 class CanvasObject {
   constructor(type, x, y, width, height, color = '#3498db', label = 'Объект') {
@@ -111,7 +113,7 @@ class CanvasObject {
 class ImageObject extends CanvasObject {
   constructor(type, x, y, width, height, imageUrl, label = 'Объект') {
     super(type, x, y, width, height, '#3498db', label);
-    this.properties = {imageUrl: imageUrl};
+    this.properties = { imageUrl: imageUrl };
     this.imageLoading = false;
 
     if (imageUrl) {
@@ -251,7 +253,7 @@ class ObjectFactory {
         image: './img/fan2.png',
         label: 'Вентилятор'
       },
-      'fire': {width: 40, height: 40, image: './img/fire.png', label: 'Огонь'},
+      'fire': { width: 40, height: 40, image: './img/fire.png', label: 'Огонь' },
       'fire2': {
         width: 40,
         height: 40,
@@ -390,7 +392,7 @@ class ObjectFactory {
         icon: './img/fan2.png',
         category: 'fan'
       },
-      {type: 'fire', name: 'Огонь', icon: './img/fire.png', category: 'fire'},
+      { type: 'fire', name: 'Огонь', icon: './img/fire.png', category: 'fire' },
       {
         type: 'fire2',
         name: 'Пожарный гидрант',
@@ -508,7 +510,7 @@ class Editor {
     this.isMoving = false;
     this.isEditing = false;
     this.selectedElement = null;
-    this.dragOffset = {x: 0, y: 0};
+    this.dragOffset = { x: 0, y: 0 };
     this.editingPoint = null;
     this.editingLength = false;
     this.lengthEditOverlay = null;
@@ -905,8 +907,8 @@ class Editor {
   getLineProperties(line) {
     return {
       id: line.id,
-      start: {...line.start},
-      end: {...line.end},
+      start: { ...line.start },
+      end: { ...line.end },
       color: line.color,
       width: line.width,
       cheight: line.cheight,
@@ -1137,10 +1139,10 @@ class Editor {
     const centerY = obj.y + obj.height / 2;
     const angle = obj.rotation * Math.PI / 180;
     const corners = [
-      {x: obj.x, y: obj.y},
-      {x: obj.x + obj.width, y: obj.y},
-      {x: obj.x + obj.width, y: obj.y + obj.height},
-      {x: obj.x, y: obj.y + obj.height}
+      { x: obj.x, y: obj.y },
+      { x: obj.x + obj.width, y: obj.y },
+      { x: obj.x + obj.width, y: obj.y + obj.height },
+      { x: obj.x, y: obj.y + obj.height }
     ];
 
     return corners.map(corner => {
@@ -1208,7 +1210,7 @@ class Editor {
               }
             }
             if (!exists) {
-              points1.push({...intersection});
+              points1.push({ ...intersection });
             }
 
             // Добавляем точку разбиения для линии 2
@@ -1225,7 +1227,7 @@ class Editor {
               }
             }
             if (!exists) {
-              points2.push({...intersection});
+              points2.push({ ...intersection });
             }
           }
         }
@@ -1250,9 +1252,9 @@ class Editor {
 
       // Добавляем начальную и конечную точки
       const allPoints = [
-        {x: line.start.x, y: line.start.y, isEndpoint: true},
-        ...points.map(p => ({x: p.x, y: p.y, isEndpoint: false})),
-        {x: line.end.x, y: line.end.y, isEndpoint: true}
+        { x: line.start.x, y: line.start.y, isEndpoint: true },
+        ...points.map(p => ({ x: p.x, y: p.y, isEndpoint: false })),
+        { x: line.end.x, y: line.end.y, isEndpoint: true }
       ];
 
       // Сортируем точки по расстоянию от начала линии
@@ -1288,8 +1290,8 @@ class Editor {
           const newLine = {
             ...line,
             id: Date.now() + Math.random() + i,
-            start: {x: startPoint.x, y: startPoint.y},
-            end: {x: endPoint.x, y: endPoint.y}
+            start: { x: startPoint.x, y: startPoint.y },
+            end: { x: endPoint.x, y: endPoint.y }
           };
           newLines.push(newLine);
         }
@@ -1339,10 +1341,10 @@ class Editor {
 
       this.objects.forEach(obj => {
         const points = [
-          {x: obj.x, y: obj.y},
-          {x: obj.x + obj.width, y: obj.y},
-          {x: obj.x, y: obj.y + obj.height},
-          {x: obj.x + obj.width, y: obj.y + obj.height}
+          { x: obj.x, y: obj.y },
+          { x: obj.x + obj.width, y: obj.y },
+          { x: obj.x, y: obj.y + obj.height },
+          { x: obj.x + obj.width, y: obj.y + obj.height }
         ];
 
         points.forEach(point => {
@@ -1360,7 +1362,7 @@ class Editor {
       }
     }
 
-    return {x: snappedX, y: snappedY};
+    return { x: snappedX, y: snappedY };
   }
 
   handleMouseDown(e) {
@@ -1509,8 +1511,8 @@ class Editor {
   startDrawing(pos) {
     this.isDrawing = true;
     this.tempLine = {
-      start: {...pos},
-      end: {...pos},
+      start: { ...pos },
+      end: { ...pos },
       color: this.lineColor,
       width: this.lineWidth, // Используем this.lineWidth вместо фиксированного значения
       cheight: this.cheight,
@@ -1529,7 +1531,7 @@ class Editor {
 
       if (distance < 1) return;
 
-      this.tempLine.end = {...pos};
+      this.tempLine.end = { ...pos };
 
       if (this.animationFrameId) {
         cancelAnimationFrame(this.animationFrameId);
@@ -1554,7 +1556,7 @@ class Editor {
       const length = Math.sqrt(dx * dx + dy * dy);
 
       if (length > 5) {
-        this.lines.push({...this.tempLine, id: Date.now() + Math.random()});
+        this.lines.push({ ...this.tempLine, id: Date.now() + Math.random() });
 
         // Используем новый метод разбиения
         const hasIntersections = this.splitAllIntersectingLines();
@@ -1632,7 +1634,7 @@ class Editor {
         this.isEditing = true;
         this.editingPoint = distToStart < distToEnd ? 'start' : 'end';
         const targetPoint = this.selectedElement[this.editingPoint];
-        this.dragOffset = {x: pos.x - targetPoint.x, y: pos.y - targetPoint.y};
+        this.dragOffset = { x: pos.x - targetPoint.x, y: pos.y - targetPoint.y };
       } else {
         this.showLinePropertiesPanel(this.selectedElement);
       }
@@ -1685,7 +1687,7 @@ class Editor {
     this.isMoving = false;
     this.isEditing = false;
     this.editingPoint = null;
-    this.dragOffset = {x: 0, y: 0};
+    this.dragOffset = { x: 0, y: 0 };
   }
 
   startLengthEditing(line, pos) {
@@ -1776,7 +1778,7 @@ class Editor {
   }
 
   isPointOnLine(point, line, tolerance = 10) {
-    const {start, end} = line;
+    const { start, end } = line;
     const A = point.x - start.x;
     const B = point.y - start.y;
     const C = end.x - start.x;
@@ -2156,7 +2158,7 @@ class Editor {
       return;
     }
 
-    const {jsPDF} = window.jspdf;
+    const { jsPDF } = window.jspdf;
     const pdf = new jsPDF();
     const canvas = this.canvas;
     const imgData = canvas.toDataURL('image/png');
