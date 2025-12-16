@@ -2013,7 +2013,7 @@ class Editor {
 	// Метод: Обработка клика по точкам пересечения
 	handleClick(e) {
 		const mousePos = this.getMousePos(e);
-		console.log('Click at position:', mousePos);
+		// console.log('Click at position:', mousePos);
 
 		// Проверяем, кликнули ли на точку пересечения
 		const clickedPoint = this.findIntersectionPointAtPosition(mousePos);
@@ -2727,7 +2727,7 @@ class Editor {
 			console.log('Selected element found, drawing intersection endpoints');
 			this.drawIntersectionEndpoints(ctx);
 		} else {
-			console.log('No selected element with intersections to draw');
+			// console.log('No selected element with intersections to draw');
 		}
 	}
 

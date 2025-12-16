@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Редактор линий и объектов</title>
+	<link rel="stylesheet" href="styles/style.css">
+	<!-- Подключаем библиотеку jsPDF -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+
+<body>
+	<div class="program-container">
+		<div class="controls">
+			<div class="controls-top">
+				<h1>Редактор линий и объектов</h1>
+				<div class="control-group">
+					<h3>Режимы</h3>
+					<div class="toolbar">
+						<button class="mode-btn active" data-mode="draw">✏️ Рисовать</button>
+						<button class="mode-btn" data-mode="move">↕️ Перемещать</button>
+						<button class="mode-btn" data-mode="edit">🔧 Редактировать</button>
+						<button class="mode-btn" data-mode="delete">❌ Удалить</button>
+					</div>
+				</div>
+			</div>
+
+			<div class="control-group group-top">
+				<h3>Библиотека объектов</h3>
+				<div class="object-panel">
+					<div class="object-categories">
+						<button class="category-btn active" data-category="all">Все</button>
+						<button class="category-btn" data-category="doors_windows">Двери</button>
+						<button class="category-btn" data-category="fan">Вентиляторы</button>
+						<button class="category-btn" data-category="fire">Огонь/Средства пожаротушения</button>
+						<button class="category-btn" data-category="boom">Взрывные работы</button>
+						<button class="category-btn" data-category="pumps">Насосы</button>
+						<button class="category-btn" data-category="jumper">Перемычки</button>
+						<!-- Дополнительные категории, которые есть в JS -->
+						<button class="category-btn" data-category="medical">Медицинские</button>
+						<button class="category-btn" data-category="building">Строения</button>
+						<button class="category-btn" data-category="people">Люди</button>
+						<button class="category-btn" data-category="phone">Телефоны</button>
+						<button class="category-btn" data-category="equipment">Оборудование</button>
+						<button class="category-btn" data-category="entrance">Входы</button>
+					</div>
+					<div class="objects-grid" id="objectsGrid">
+						<!-- Объекты будут добавлены через JavaScript -->
+					</div>
+				</div>
+			</div>
+
+			<div class="controls-left">
+				<div class="control-group">
+					<h3>Цвет линии</h3>
+					<div class="toolbar">
+						<button class="color-btn active" data-color="black" style="background: black"></button>
+						<button class="color-btn" data-color="red" style="background: red"></button>
+						<button class="color-btn" data-color="blue" style="background: blue"></button>
+						<button class="color-btn" data-color="green" style="background: green"></button>
+						<!-- Дополнительные цвета, если нужно -->
+						<button class="color-btn" data-color="#ffffff" style="background: white; border: 1px solid #ccc"></button>
+						<button class="color-btn" data-color="#3498db" style="background: #3498db"></button>
+					</div>
+				</div>
+
+				<div class="control-group">
+					<h3>Привязка</h3>
+					<div>
+						<input type="checkbox" id="snapToGrid" checked>
+						<label for="snapToGrid">К сетке</label>
+					</div>
+					<div>
+						<input type="checkbox" id="snapToPoints" checked>
+						<label for="snapToPoints">К точкам</label>
+					</div>
+					<div class="property-group">
+						<label for="lineWidth">Ширина линии (px):</label>
+						<input type="number" id="lineWidth" min="1" max="20" value="5" title="Ширина линии в пикселях">
+					</div>
+				</div>
+
+				<!-- Панель свойств объекта -->
+				<div class="control-group properties-panel" id="propertiesPanel" style="display: none;">
+					<h3>Свойства объекта</h3>
+					<div id="propertiesContent">
+						<div class="property-group">
+							<label class="property-label">Метка:</label>
+							<input type="text" id="propertyLabel" class="property-input" placeholder="Название объекта">
+						</div>
+						<div class="property-group">
+							<label class="property-label">Ширина:</label>
+							<input type="number" id="propertyWidth" class="property-input" min="1" max="200">
+						</div>
+						<div class="property-group">
+							<label class="property-label">Высота:</label>
+							<input type="number" id="propertyHeight" class="property-input" min="1" max="200">
+						</div>
+						<div class="property-actions">
+							<button id="rotateButton" class="rotate-btn">🔄 Повернуть</button>
+							<button id="applyProperties" class="apply-btn">✅ Применить</button>
+							<button id="cancelProperties" class="cancel-btn">❌ Отмена</button>
+						</div>
+					</div>
+				</div>
+
+				<!-- Панель свойств линии -->
+				<div class="control-group line-properties-panel" id="linePropertiesPanel" style="display: none;">
+					<h3>Свойства линии</h3>
+					<div id="linePropertiesContent">
+						<div class="property-group">
+							<label class="property-label">Высота (cheight):</label>
+							<input type="number" id="lineCheight" class="property-input" placeholder="Высота в м" step="0.1">
+						</div>
+						<div class="property-group">
+							<label class="property-label">Ширина (cwidth):</label>
+							<input type="number" id="lineCwidth" class="property-input" placeholder="Ширина в м" step="0.1">
+						</div>
+						<div class="property-group">
+							<label class="property-label">Объем (cvolume):</label>
+							<input type="number" id="lineCvolume" class="property-input" placeholder="Объем в м³" step="0.1">
+						</div>
+						<div class="property-group">
+							<label class="property-label">Длина линии:</label>
+							<input type="text" id="lineLength" class="property-input" readonly>
+						</div>
+						<div class="property-actions">
+							<button id="applyLineProperties" class="apply-btn">✅ Применить</button>
+							<button id="cancelLineProperties" class="cancel-btn">❌ Отмена</button>
+						</div>
+					</div>
+				</div>
+
+				<div class="control-group">
+					<h3>Действия</h3>
+					<div class="action-buttons">
+						<button id="clearAll">Очистить всё</button>
+						<button id="showAllLines">Показать все элементы</button>
+						<button id="savePDF">Сохранить в PDF</button>
+						<button id="showLineProperties">Показать свойства линий</button>
+
+						<button id="findIntersections">Найти пересечения</button>
+						<button id="clearIntersections">Очистить пересечения</button>
+						<button id="toggleIntersections">Показать/скрыть пересечения</button>
+
+						<button id="exportAllLinesData">Экспорт данных линий</button>
+						<button id="exportIntersections">Экспорт точек пересечения</button>
+
+						<button id="toggleTrackProperties">Показать/скрыть свойства линий</button>
+						<button id="showLineTrackInfo">Свойства выбранной линии</button>
+						<button id="updateAllTrackProperties">Обновить свойства всех линий</button>
+
+						<button id="updatePassability">Обновить passability</button>
+						<button id="showPassabilityInfo">Passability линии</button>
+					</div>
+				</div>
+
+				<div class="status">
+					<h3>Статус</h3>
+					<div class="status-item">
+						Режим: <span id="currentMode">Рисование линий</span>
+					</div>
+					<div class="status-item">
+						Цвет: <span id="currentColor">black</span>
+					</div>
+					<div class="status-item">
+						Объектов: <span id="objectsCount">0</span>
+					</div>
+					<div class="status-item">
+						Линий: <span id="linesCount">0</span>
+					</div>
+					<div class="status-item">
+						Пересечений: <span id="intersectionsCount">0</span>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="canvas-container">
+			<h2>Область рисования</h2>
+			<canvas id="drawingCanvas" width="800" height="800"></canvas>
+		</div>
+	</div>
+
+	<!-- Подключение JavaScript файла -->
+	<!-- <script src="js/arra-line9-1px-start-end-2-svoistva-in-line-3.js"></script> -->
+	<script src="js/arra-line9-1px-start-end-2-svoistva-in-line-3-function.js"></script>
+</body>
+
+</html>
