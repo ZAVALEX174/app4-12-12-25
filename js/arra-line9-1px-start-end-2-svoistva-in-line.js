@@ -519,6 +519,7 @@ class Editor {
 		this.showIntersections = false;
 		this.intersectionPoints = [];
 		this.intersectionInfo = [];
+		this.showTrackProperties = false; // Новое: показывать свойства track/endtrack
 
 		// Оптимизация для временных линий
 		this.lastDrawnTempLine = null;
@@ -712,6 +713,46 @@ class Editor {
 				console.log(`Отображение пересечений: ${this.showIntersections ? 'включено' : 'отключено'}`);
 			});
 		}
+
+		// Новые кнопки для работы со свойствами track и endtrack
+		const toggleTrackProperties = document.getElementById('toggleTrackProperties');
+		if (toggleTrackProperties) {
+			toggleTrackProperties.addEventListener('click', () => {
+				this.showTrackProperties = !this.showTrackProperties;
+				toggleTrackProperties.textContent =
+					this.showTrackProperties ? 'Скрыть свойства линий' : 'Показать свойства линий';
+				this.needsRedraw = true;
+				this.redraw();
+			});
+		}
+
+		const showLineTrackInfo = document.getElementById('showLineTrackInfo');
+		if (showLineTrackInfo) {
+			showLineTrackInfo.addEventListener('click', () => {
+				if (this.selectedElement && this.selectedElement.start && this.selectedElement.end) {
+					this.showLineTrackInfo(this.selectedElement);
+				} else {
+					alert('Выберите линию для просмотра свойств');
+				}
+			});
+		}
+
+		const updateAllTrackProperties = document.getElementById('updateAllTrackProperties');
+		if (updateAllTrackProperties) {
+			updateAllTrackProperties.addEventListener('click', () => {
+				this.updateLineTrackProperties();
+				this.needsRedraw = true;
+				this.redraw();
+				alert('Свойства всех линий обновлены');
+			});
+		}
+
+		const exportAllLinesData = document.getElementById('exportAllLinesData');
+		if (exportAllLinesData) {
+			exportAllLinesData.addEventListener('click', () => {
+				this.exportAllLinesData();
+			});
+		}
 	}
 
 	setupObjectLibrary() {
@@ -890,7 +931,9 @@ class Editor {
 			message += `  Длина: ${line.realLength.toFixed(1)}m\n`;
 			message += `  Высота: ${line.cheight || 'не задана'}\n`;
 			message += `  Ширина: ${line.cwidth || 'не задана'}\n`;
-			message += `  Объем: ${line.cvolume || 'не задана'}\n\n`;
+			message += `  Объем: ${line.cvolume || 'не задана'}\n`;
+			message += `  Track свойств: ${line.track ? line.track.length : 0}\n`;
+			message += `  Endtrack свойств: ${line.endtrack ? line.endtrack.length : 0}\n\n`;
 		});
 		alert(message);
 	}
@@ -910,24 +953,51 @@ class Editor {
 			cwidth: line.cwidth,
 			cvolume: line.cvolume,
 			customLength: line.customLength,
-			realLength: this.calculateLineLength(line)
+			realLength: this.calculateLineLength(line),
+			track: line.track || [],
+			endtrack: line.endtrack || []
 		};
 	}
 
 	// Метод: Определение конца линии, который ближе к точке
-	getLineEndpointAtIntersection(line, intersectionPoint, tolerance = 5) {
+	getLineEndpointAtIntersection(line, intersectionPoint, intersectionId, tolerance = 5) {
 		const distToStart = this.distance(intersectionPoint, line.start);
 		const distToEnd = this.distance(intersectionPoint, line.end);
 
+		// Инициализируем массивы, если их нет
+		if (!line.track) line.track = [];
+		if (!line.endtrack) line.endtrack = [];
+
 		if (distToStart < tolerance && distToEnd < tolerance) {
 			// Если обе точки близки, это может быть очень короткая линия
-			return distToStart < distToEnd ? 'start' : 'end';
+			const endpoint = distToStart < distToEnd ? 'start' : 'end';
+			if (endpoint === 'start') {
+				// Добавляем ID точки пересечения в массив track
+				if (!line.track.includes(intersectionId)) {
+					line.track.push(intersectionId);
+				}
+			} else {
+				// Добавляем ID точки пересечения в массив endtrack
+				if (!line.endtrack.includes(intersectionId)) {
+					line.endtrack.push(intersectionId);
+				}
+			}
+			return endpoint;
 		} else if (distToStart < tolerance) {
+			// Линия подходит началом к точке
+			if (!line.track.includes(intersectionId)) {
+				line.track.push(intersectionId);
+			}
 			return 'start';
 		} else if (distToEnd < tolerance) {
+			// Линия подходит концом к точке
+			if (!line.endtrack.includes(intersectionId)) {
+				line.endtrack.push(intersectionId);
+			}
 			return 'end';
 		} else {
-			return 'middle'; // Точка где-то посередине
+			// Точка где-то посередине
+			return 'middle';
 		}
 	}
 
@@ -1029,8 +1099,9 @@ class Editor {
 						const intersectionPoint = new IntersectionPoint(intersection.x, intersection.y);
 
 						// Определяем, каким концом каждая линия подходит к точке
-						const line1Endpoint = this.getLineEndpointAtIntersection(line1, intersection, 5);
-						const line2Endpoint = this.getLineEndpointAtIntersection(line2, intersection, 5);
+						// Передаем ID точки пересечения для добавления в массивы свойств
+						const line1Endpoint = this.getLineEndpointAtIntersection(line1, intersection, intersectionPoint.id, 5);
+						const line2Endpoint = this.getLineEndpointAtIntersection(line2, intersection, intersectionPoint.id, 5);
 
 						intersectionPoint.intersections.push({
 							type: 'line-line',
@@ -1039,7 +1110,12 @@ class Editor {
 							line1Endpoint: line1Endpoint,
 							line2Endpoint: line2Endpoint,
 							line1Id: line1.id,
-							line2Id: line2.id
+							line2Id: line2.id,
+							// Добавляем информацию о свойствах
+							line1HasTrack: line1Endpoint === 'start',
+							line1HasEndtrack: line1Endpoint === 'end',
+							line2HasTrack: line2Endpoint === 'start',
+							line2HasEndtrack: line2Endpoint === 'end'
 						});
 						allIntersectionPoints.push(intersectionPoint);
 					}
@@ -1095,6 +1171,9 @@ class Editor {
 		}
 
 		console.log('==========================================');
+
+		// Обновляем свойства track и endtrack для всех линий
+		this.updateLineTrackProperties();
 
 		// Включаем отображение точек пересечения
 		this.showIntersections = true;
@@ -1155,7 +1234,7 @@ class Editor {
 
 				if (!isDuplicate) {
 					// Определяем, каким концом линия подходит к точке
-					const lineEndpoint = this.getLineEndpointAtIntersection(line, intersection, 5);
+					const lineEndpoint = this.getLineEndpointAtIntersection(line, intersection, null, 5);
 
 					// Определяем, с какой стороной объекта пересекается линия
 					const objectSide = this.getObjectSideAtIntersection(obj, intersection, bounds, i);
@@ -1333,7 +1412,9 @@ class Editor {
 						...line,
 						id: Date.now() + Math.random() + i,
 						start: { x: startPoint.x, y: startPoint.y },
-						end: { x: endPoint.x, y: endPoint.y }
+						end: { x: endPoint.x, y: endPoint.y },
+						track: [], // Инициализируем пустыми
+						endtrack: []
 					};
 					newLines.push(newLine);
 				}
@@ -1346,6 +1427,160 @@ class Editor {
 		this.lines = newLines;
 
 		return splitPointsMap.size > 0;
+	}
+
+	// Метод: Обновление свойств track и endtrack для всех линий
+	updateLineTrackProperties() {
+		// Сначала очищаем существующие свойства
+		this.lines.forEach(line => {
+			line.track = [];
+			line.endtrack = [];
+		});
+
+		// Проходим по всем точкам пересечения
+		this.intersectionPoints.forEach(intersectionPoint => {
+			intersectionPoint.intersections.forEach(intersection => {
+				if (intersection.type === 'line-line') {
+					// Находим соответствующие линии в массиве lines
+					const line1 = this.lines.find(l => l.id === intersection.line1Id);
+					const line2 = this.lines.find(l => l.id === intersection.line2Id);
+
+					if (line1) {
+						if (intersection.line1Endpoint === 'start') {
+							if (!line1.track.includes(intersectionPoint.id)) {
+								line1.track.push(intersectionPoint.id);
+							}
+						} else if (intersection.line1Endpoint === 'end') {
+							if (!line1.endtrack.includes(intersectionPoint.id)) {
+								line1.endtrack.push(intersectionPoint.id);
+							}
+						}
+					}
+
+					if (line2) {
+						if (intersection.line2Endpoint === 'start') {
+							if (!line2.track.includes(intersectionPoint.id)) {
+								line2.track.push(intersectionPoint.id);
+							}
+						} else if (intersection.line2Endpoint === 'end') {
+							if (!line2.endtrack.includes(intersectionPoint.id)) {
+								line2.endtrack.push(intersectionPoint.id);
+							}
+						}
+					}
+				}
+			});
+		});
+
+		// Выводим информацию для отладки
+		console.log('=== Свойства линий обновлены ===');
+		this.lines.forEach((line, index) => {
+			console.log(`Линия ${index + 1} (ID: ${line.id}):`);
+			console.log(`  track: ${line.track.length > 0 ? line.track : 'нет'}`);
+			console.log(`  endtrack: ${line.endtrack.length > 0 ? line.endtrack : 'нет'}`);
+		});
+	}
+
+	// Метод: Визуализация свойств track и endtrack
+	drawTrackProperties(ctx = this.ctx) {
+		if (!this.showTrackProperties) return;
+
+		this.lines.forEach(line => {
+			// Рисуем для свойств track (начало линии в точке пересечения)
+			if (line.track && line.track.length > 0) {
+				line.track.forEach(trackId => {
+					const point = this.intersectionPoints.find(p => p.id === trackId);
+					if (point) {
+						ctx.save();
+						ctx.fillStyle = 'rgba(0, 255, 0, 0.7)';
+						ctx.beginPath();
+						ctx.arc(point.x, point.y, 10, 0, Math.PI * 2);
+						ctx.fill();
+						ctx.fillStyle = 'white';
+						ctx.font = 'bold 10px Arial';
+						ctx.textAlign = 'center';
+						ctx.textBaseline = 'middle';
+						ctx.fillText('T', point.x, point.y);
+						ctx.restore();
+					}
+				});
+			}
+
+			// Рисуем для свойств endtrack (конец линии в точке пересечения)
+			if (line.endtrack && line.endtrack.length > 0) {
+				line.endtrack.forEach(endtrackId => {
+					const point = this.intersectionPoints.find(p => p.id === endtrackId);
+					if (point) {
+						ctx.save();
+						ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
+						ctx.beginPath();
+						ctx.arc(point.x, point.y, 10, 0, Math.PI * 2);
+						ctx.fill();
+						ctx.fillStyle = 'white';
+						ctx.font = 'bold 10px Arial';
+						ctx.textAlign = 'center';
+						ctx.textBaseline = 'middle';
+						ctx.fillText('E', point.x, point.y);
+						ctx.restore();
+					}
+				});
+			}
+		});
+	}
+
+	// Метод: Показать свойства линии
+	showLineTrackInfo(line) {
+		let message = `Свойства линии (ID: ${line.id}):\n`;
+		message += `Начало: (${line.start.x.toFixed(1)}, ${line.start.y.toFixed(1)})\n`;
+		message += `Конец: (${line.end.x.toFixed(1)}, ${line.end.y.toFixed(1)})\n`;
+		message += `Длина: ${this.calculateLineLength(line).toFixed(1)}px\n\n`;
+
+		message += `Свойство track (начало в точках пересечения):\n`;
+		if (line.track && line.track.length > 0) {
+			line.track.forEach(trackId => {
+				const point = this.intersectionPoints.find(p => p.id === trackId);
+				if (point) {
+					message += `  • Точка #${trackId} (${point.x.toFixed(1)}, ${point.y.toFixed(1)})\n`;
+				}
+			});
+		} else {
+			message += `  нет\n`;
+		}
+
+		message += `\nСвойство endtrack (конец в точках пересечения):\n`;
+		if (line.endtrack && line.endtrack.length > 0) {
+			line.endtrack.forEach(endtrackId => {
+				const point = this.intersectionPoints.find(p => p.id === endtrackId);
+				if (point) {
+					message += `  • Точка #${endtrackId} (${point.x.toFixed(1)}, ${point.y.toFixed(1)})\n`;
+				}
+			});
+		} else {
+			message += `  нет\n`;
+		}
+
+		console.log(message);
+		alert(message);
+	}
+
+	// Метод: Экспорт всех данных о линиях
+	exportAllLinesData() {
+		const data = this.lines.map(line => this.getLineProperties(line));
+		const json = JSON.stringify(data, null, 2);
+
+		// Создаем ссылку для скачивания
+		const blob = new Blob([json], { type: 'application/json' });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = 'линии_данные.json';
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		URL.revokeObjectURL(url);
+
+		console.log('Данные экспортированы:', data);
+		alert('Данные о линиях экспортированы в файл "линии_данные.json"');
 	}
 
 	getMousePos(e) {
@@ -1519,7 +1754,6 @@ class Editor {
 					// Добавляем информацию о конце линии
 					if (intersection.lineEndpoint === 'start') {
 						message += `  Линия подходит НАЧАЛОМ к точке\n`;
-
 					} else if (intersection.lineEndpoint === 'end') {
 						message += `  Линия подходит КОНЦОМ к точке\n`;
 					} else if (intersection.lineEndpoint === 'middle') {
@@ -1560,6 +1794,20 @@ class Editor {
 						message += `    Точка в СЕРЕДИНЕ линии 2\n`;
 					} else {
 						message += `    Неизвестно каким концом (линия 2)\n`;
+					}
+
+					// Добавим информацию о свойствах track и endtrack
+					if (intersection.line1HasTrack) {
+						message += `    Линия 1 имеет свойство TRACK в этой точке\n`;
+					}
+					if (intersection.line1HasEndtrack) {
+						message += `    Линия 1 имеет свойство ENDTRACK в этой точке\n`;
+					}
+					if (intersection.line2HasTrack) {
+						message += `    Линия 2 имеет свойство TRACK в этой точке\n`;
+					}
+					if (intersection.line2HasEndtrack) {
+						message += `    Линия 2 имеет свойство ENDTRACK в этой точке\n`;
 					}
 
 					// Добавим информацию о расстояниях для отладки
@@ -1636,6 +1884,8 @@ class Editor {
 			cheight: this.cheight,
 			cwidth: this.cwidth,
 			cvolume: this.cvolume,
+			track: [], // Новое свойство
+			endtrack: [] // Новое свойство
 		};
 		this.lastDrawnTempLine = null;
 		this.tempLineDrawn = false;
@@ -2139,6 +2389,11 @@ class Editor {
 		// Очищаем основной холст и копируем буфер
 		ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 		ctx.drawImage(this.bufferCanvas, 0, 0);
+
+		// Рисуем свойства track и endtrack
+		if (this.showTrackProperties) {
+			this.drawTrackProperties(ctx);
+		}
 
 		// Рисуем временную линию, если она есть
 		if (this.tempLine) {
