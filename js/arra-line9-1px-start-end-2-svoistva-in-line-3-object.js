@@ -51,89 +51,21 @@ class CanvasObject {
 		});
 	}
 
-	// Получить границы объекта (ограничивающий прямоугольник)
-	getBounds() {
+	// Получить стороны объекта (для проверки пересечений)
+	getSides() {
 		const vertices = this.getVertices();
-		let minX = Infinity, minY = Infinity;
-		let maxX = -Infinity, maxY = -Infinity;
+		const sides = [];
 
-		vertices.forEach(v => {
-			minX = Math.min(minX, v.x);
-			minY = Math.min(minY, v.y);
-			maxX = Math.max(maxX, v.x);
-			maxY = Math.max(maxY, v.y);
-		});
-
-		return {
-			x: minX,
-			y: minY,
-			width: maxX - minX,
-			height: maxY - minY
-		};
-	}
-
-	// Проверить, пересекается ли линия с объектом
-	intersectsLine(lineStart, lineEnd) {
-		const vertices = this.getVertices();
-
-		// Проверяем пересечение линии с каждой стороной объекта
 		for (let i = 0; i < vertices.length; i++) {
 			const nextIndex = (i + 1) % vertices.length;
-			const intersection = this.getLineIntersection(
-				lineStart, lineEnd,
-				vertices[i], vertices[nextIndex]
-			);
-
-			if (intersection) {
-				return {
-					point: intersection,
-					side: i,
-					vertices: [vertices[i], vertices[nextIndex]]
-				};
-			}
+			sides.push({
+				start: vertices[i],
+				end: vertices[nextIndex],
+				sideIndex: i
+			});
 		}
 
-		return null;
-	}
-
-	// Найти пересечение двух отрезков
-	getLineIntersection(p1, p2, p3, p4) {
-		const denominator = (p4.y - p3.y) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.y - p1.y);
-		if (Math.abs(denominator) < 0.0001) return null;
-
-		const ua = ((p4.x - p3.x) * (p1.y - p3.y) - (p4.y - p3.y) * (p1.x - p3.x)) / denominator;
-		const ub = ((p2.x - p1.x) * (p1.y - p3.y) - (p2.y - p1.y) * (p1.x - p3.x)) / denominator;
-
-		if (ua >= -0.001 && ua <= 1.001 && ub >= -0.001 && ub <= 1.001) {
-			return {
-				x: p1.x + ua * (p2.x - p1.x),
-				y: p1.y + ua * (p2.y - p1.y)
-			};
-		}
-
-		return null;
-	}
-
-	// Проверить, находится ли точка на отрезке
-	isPointOnLineSegment(point, lineStart, lineEnd, tolerance = 3) {
-		const A = point.x - lineStart.x;
-		const B = point.y - lineStart.y;
-		const C = lineEnd.x - lineStart.x;
-		const D = lineEnd.y - lineStart.y;
-
-		const lineLength = Math.hypot(C, D);
-		if (lineLength < 1) return false;
-
-		const dot = A * C + B * D;
-		const lenSq = C * C + D * D;
-		let param = -1;
-		if (lenSq !== 0) param = dot / lenSq;
-
-		const extendedParam = Math.max(0, Math.min(1, param));
-		const xx = lineStart.x + extendedParam * C;
-		const yy = lineStart.y + extendedParam * D;
-
-		return Math.hypot(point.x - xx, point.y - yy) < tolerance;
+		return sides;
 	}
 
 	loadImage(imageUrl) {
@@ -647,7 +579,6 @@ class Editor {
 			'savePDF': () => this.saveAsPDF(),
 			'clearIntersections': () => this.clearIntersections(),
 			'toggleIntersections': () => this.toggleIntersections(),
-			'toggleTrackProperties': () => this.toggleTrackProperties(),
 			'showLineTrackInfo': () => this.showLineTrackInfoHandler(),
 			'updateAllTrackProperties': () => this.updateLineTrackProperties(),
 			'exportAllLinesData': () => this.exportAllLinesData(),
@@ -710,9 +641,31 @@ class Editor {
 		const toggleTrackProperties = document.getElementById('toggleTrackProperties');
 		if (toggleTrackProperties) {
 			toggleTrackProperties.addEventListener('click', () => {
+				if (this.selectedElement) {
+					if (this.selectedElement.start && this.selectedElement.end) {
+						this.showLineTrackInfo(this.selectedElement);
+					}
+					else if (this.selectedElement.intersections) {
+						this.showIntersectionInfo(this.selectedElement);
+					}
+					else if (this.selectedElement.type) {
+						const objInfo = `Объект: ${this.selectedElement.label}\n` +
+							`Тип: ${this.selectedElement.type}\n` +
+							`Координаты: (${this.selectedElement.center.x.toFixed(1)}, ${this.selectedElement.center.y.toFixed(1)})\n` +
+							`Размеры: ${this.selectedElement.width} x ${this.selectedElement.height}\n` +
+							`Поворот: ${this.selectedElement.rotation}°`;
+						alert(objInfo);
+					}
+				} else {
+					alert('Ничего не выбрано. Выберите линию, объект или точку пересечения.');
+				}
+			});
+		}
+
+		const togglePropertiesDisplay = document.getElementById('togglePropertiesDisplay');
+		if (togglePropertiesDisplay) {
+			togglePropertiesDisplay.addEventListener('click', () => {
 				this.showTrackProperties = !this.showTrackProperties;
-				toggleTrackProperties.textContent =
-					this.showTrackProperties ? 'Скрыть свойства линий' : 'Показать свойства линий';
 				this.needsRedraw = true;
 				this.redraw();
 			});
@@ -989,14 +942,11 @@ class Editor {
 			if (length > 5) {
 				const newLine = { ...this.tempLine, id: Date.now() + Math.random() };
 
-				// Проверяем пересечение новой линии с объектами
-				const objectIntersections = this.getLineObjectIntersections(newLine);
-				if (objectIntersections.length > 0) {
-					// Разбиваем линию по пересечениям с объектами
-					this.splitLineByObjectIntersections(newLine, objectIntersections);
-				} else {
-					this.lines.push(newLine);
-				}
+				// Добавляем линию
+				this.lines.push(newLine);
+
+				// Проверяем пересечение с объектами и создаем точки пересечения
+				this.checkLineObjectIntersections(newLine);
 
 				// Разбиваем линии между собой
 				const hasIntersections = this.splitAllIntersectingLines();
@@ -1015,6 +965,107 @@ class Editor {
 			this.isDrawing = false;
 			this.redraw();
 		}
+	}
+
+	// НОВЫЙ МЕТОД: Проверка пересечения линии с объектами
+	checkLineObjectIntersections(line) {
+		const objectIntersections = [];
+
+		// Проверяем пересечение с каждым объектом
+		for (const obj of this.objects) {
+			const intersection = this.getLineObjectIntersection(line, obj);
+			if (intersection) {
+				objectIntersections.push({
+					point: intersection.point,
+					object: obj,
+					side: intersection.side
+				});
+			}
+		}
+
+		// Если есть пересечения, создаем точки пересечения
+		if (objectIntersections.length > 0) {
+			this.createObjectIntersectionPoints(line, objectIntersections);
+		}
+	}
+
+	// НОВЫЙ МЕТОД: Создание точек пересечения линии с объектами
+	createObjectIntersectionPoints(line, intersections) {
+		for (const intersection of intersections) {
+			// Создаем точку пересечения
+			const intersectionPoint = new IntersectionPoint(
+				intersection.point.x,
+				intersection.point.y
+			);
+
+			// Определяем, каким концом линия подходит к точке
+			const lineEndpoint = this.getLineEndpointAtIntersection(
+				line,
+				intersection.point,
+				intersectionPoint.id,
+				5
+			);
+
+			// Добавляем информацию о пересечении
+			intersectionPoint.intersections.push({
+				type: 'line-object',
+				line: line,
+				object: intersection.object,
+				lineEndpoint: lineEndpoint,
+				objectSide: intersection.side,
+				lineId: line.id,
+				objectId: intersection.object.id
+			});
+
+			// Добавляем точку пересечения
+			this.intersectionPoints.push(intersectionPoint);
+
+			// Обновляем свойства линии
+			if (lineEndpoint === 'start') {
+				if (!line.track.includes(intersectionPoint.id)) {
+					line.track.push(intersectionPoint.id);
+				}
+				line.passability[intersectionPoint.id] = 5;
+			} else if (lineEndpoint === 'end') {
+				if (!line.endtrack.includes(intersectionPoint.id)) {
+					line.endtrack.push(intersectionPoint.id);
+				}
+				line.passability[intersectionPoint.id] = 10;
+			} else {
+				line.passability[intersectionPoint.id] = 0;
+			}
+		}
+	}
+
+	// НОВЫЙ МЕТОД: Найти пересечение линии с объектом
+	getLineObjectIntersection(line, obj) {
+		const sides = obj.getSides();
+
+		for (const side of sides) {
+			const intersection = this.getLineIntersection(
+				line.start, line.end,
+				side.start, side.end
+			);
+
+			if (intersection) {
+				const isOnLine = this.isPointOnLineSegment(
+					intersection, line.start, line.end, 3
+				);
+				const isOnSide = this.isPointOnLineSegment(
+					intersection, side.start, side.end, 3
+				);
+
+				if (isOnLine && isOnSide) {
+					return {
+						point: intersection,
+						side: side.sideIndex,
+						vertices: [side.start, side.end]
+					};
+				}
+			}
+		}
+
+		return null;
 	}
 
 	startMoving(pos) {
@@ -1112,8 +1163,18 @@ class Editor {
 		if (objectToDelete) {
 			this.objects = this.objects.filter(obj => obj !== objectToDelete);
 
-			// При удалении объекта нужно обновить линии
-			this.updateLinesAfterObjectRemoval();
+			// Удаляем точки пересечения, связанные с этим объектом
+			this.intersectionPoints = this.intersectionPoints.filter(point => {
+				// Оставляем точки, которые не связаны с удаляемым объектом
+				const hasObjectIntersection = point.intersections.some(
+					intersection => intersection.type === 'line-object' &&
+						intersection.objectId === objectToDelete.id
+				);
+				return !hasObjectIntersection;
+			});
+
+			// Обновляем свойства линий
+			this.updateLineTrackProperties();
 
 			this.hidePropertiesPanel();
 			this.needsRedraw = true;
@@ -1125,6 +1186,20 @@ class Editor {
 		const lineToDelete = this.findLineAtPoint(pos);
 		if (lineToDelete) {
 			this.lines = this.lines.filter(line => line !== lineToDelete);
+
+			// Удаляем точки пересечения, связанные с этой линией
+			this.intersectionPoints = this.intersectionPoints.filter(point => {
+				// Оставляем точки, которые не связаны с удаляемой линией
+				const hasLineIntersection = point.intersections.some(
+					intersection => (intersection.type === 'line-line' &&
+						(intersection.line1Id === lineToDelete.id ||
+							intersection.line2Id === lineToDelete.id)) ||
+						(intersection.type === 'line-object' &&
+							intersection.lineId === lineToDelete.id)
+				);
+				return !hasLineIntersection;
+			});
+
 			this.hideLinePropertiesPanel();
 			this.needsRedraw = true;
 			this.updateStats();
@@ -1235,80 +1310,71 @@ class Editor {
 		return null;
 	}
 
-	// Новый метод: найти пересечения линии с объектами
-	getLineObjectIntersections(line) {
-		const intersections = [];
-
-		for (const obj of this.objects) {
-			const intersection = obj.intersectsLine(line.start, line.end);
-			if (intersection) {
-				intersections.push({
-					point: intersection.point,
-					object: obj,
-					side: intersection.side
-				});
-			}
-		}
-
-		return intersections;
-	}
-
-	// Новый метод: разбить линию по пересечениям с объектами
-	splitLineByObjectIntersections(line, intersections) {
-		// Собираем все точки: начало, точки пересечения, конец
-		const allPoints = [
-			{ point: line.start, type: 'start' },
-			...intersections.map(i => ({ point: i.point, type: 'intersection', data: i })),
-			{ point: line.end, type: 'end' }
-		];
-
-		// Сортируем точки по расстоянию от начала линии
-		allPoints.sort((a, b) => {
-			return this.distance(line.start, a.point) - this.distance(line.start, b.point);
-		});
-
-		// Удаляем дубликаты (близкие точки)
-		const uniquePoints = this.removeDuplicatePoints(allPoints.map(p => p.point));
-
-		// Создаем сегменты линии
-		for (let i = 0; i < uniquePoints.length - 1; i++) {
-			const segmentLength = this.distance(uniquePoints[i], uniquePoints[i + 1]);
-			if (segmentLength > 5) {
-				const newSegment = {
-					...line,
-					id: Date.now() + Math.random() + i,
-					start: { x: uniquePoints[i].x, y: uniquePoints[i].y },
-					end: { x: uniquePoints[i + 1].x, y: uniquePoints[i + 1].y },
-					track: [],
-					endtrack: [],
-					passability: {}
-				};
-				this.lines.push(newSegment);
-			}
-		}
-	}
-
-	// Новый метод: обновить линии после удаления объекта
-	updateLinesAfterObjectRemoval() {
-		const newLines = [];
-
-		for (const line of this.lines) {
-			// Проверяем, не была ли линия создана из-за объекта
-			// Для простоты пересоздаем все линии без учета объектов
-			// В реальном приложении здесь нужна более сложная логика
-			newLines.push(line);
-		}
-
-		this.lines = newLines;
-		this.splitAllIntersectingLines();
-	}
-
+	// НОВЫЙ МЕТОД: Добавить объект с созданием точек пересечения
 	addObject(type, x, y) {
 		const obj = ObjectFactory.createObject(type, x, y);
 		this.objects.push(obj);
 
-		// Проверяем пересечение нового объекта с существующими линиями
-		this.splitLinesWithObject(obj);
+		// Находим все линии, которые пересекаются с объектом
+		const lineIntersections = [];
+
+		for (const line of this.lines) {
+			const intersection = this.getLineObjectIntersection(line, obj);
+			if (intersection) {
+				lineIntersections.push({
+					line: line,
+					intersection: intersection
+				});
+			}
+		}
+
+		// Создаем точки пересечения для каждой линии
+		for (const item of lineIntersections) {
+			const intersectionPoint = new IntersectionPoint(
+				item.intersection.point.x,
+				item.intersection.point.y
+			);
+
+			// Определяем, каким концом линия подходит к точке
+			const lineEndpoint = this.getLineEndpointAtIntersection(
+				item.line,
+				item.intersection.point,
+				intersectionPoint.id,
+				5
+			);
+
+			// Добавляем информацию о пересечении
+			intersectionPoint.intersections.push({
+				type: 'line-object',
+				line: item.line,
+				object: obj,
+				lineEndpoint: lineEndpoint,
+				objectSide: item.intersection.side,
+				lineId: item.line.id,
+				objectId: obj.id
+			});
+
+			// Добавляем точку пересечения
+			this.intersectionPoints.push(intersectionPoint);
+
+			// Обновляем свойства линии
+			if (lineEndpoint === 'start') {
+				if (!item.line.track.includes(intersectionPoint.id)) {
+					item.line.track.push(intersectionPoint.id);
+				}
+				item.line.passability[intersectionPoint.id] = 5;
+			} else if (lineEndpoint === 'end') {
+				if (!item.line.endtrack.includes(intersectionPoint.id)) {
+					item.line.endtrack.push(intersectionPoint.id);
+				}
+				item.line.passability[intersectionPoint.id] = 10;
+			} else {
+				item.line.passability[intersectionPoint.id] = 0;
+			}
+		}
+
+		// Разбиваем линии по точкам пересечения с объектом
+		this.splitLinesWithObject(obj, lineIntersections);
 
 		this.needsRedraw = true;
 		this.updateStats();
@@ -1326,71 +1392,26 @@ class Editor {
 		}
 	}
 
-	// Новый метод: разбить линии, пересекающиеся с объектом
-	splitLinesWithObject(obj) {
-		const linesToSplit = [];
+	// НОВЫЙ МЕТОД: Разбить линии по точкам пересечения с объектом
+	splitLinesWithObject(obj, lineIntersections) {
+		const splitPointsMap = new Map();
 
-		// Находим все линии, которые пересекаются с объектом
-		for (const line of this.lines) {
-			const intersection = obj.intersectsLine(line.start, line.end);
-			if (intersection) {
-				linesToSplit.push({
-					line,
-					intersection: intersection.point
-				});
+		// Собираем все точки пересечения
+		for (const item of lineIntersections) {
+			if (!splitPointsMap.has(item.line.id)) {
+				splitPointsMap.set(item.line.id, []);
 			}
+			splitPointsMap.get(item.line.id).push(item.intersection.point);
 		}
 
-		// Разбиваем найденные линии
-		for (const item of linesToSplit) {
-			this.splitLineAtPoint(item.line, item.intersection);
-		}
-
-		return linesToSplit.length > 0;
-	}
-
-	// Новый метод: разбить линию в точке
-	splitLineAtPoint(line, point) {
-		const lineIndex = this.lines.indexOf(line);
-		if (lineIndex === -1) return;
-
-		const distanceToStart = this.distance(point, line.start);
-		const distanceToEnd = this.distance(point, line.end);
-		const totalLength = distanceToStart + distanceToEnd;
-
-		if (distanceToStart < 5 || distanceToEnd < 5) {
-			// Точка слишком близко к концу линии - не разбиваем
-			return;
-		}
-
-		// Создаем две новые линии
-		const line1 = {
-			...line,
-			id: Date.now() + Math.random(),
-			start: { x: line.start.x, y: line.start.y },
-			end: { x: point.x, y: point.y },
-			track: [...(line.track || [])],
-			endtrack: [...(line.endtrack || [])],
-			passability: { ...line.passability }
-		};
-
-		const line2 = {
-			...line,
-			id: Date.now() + Math.random() + 1,
-			start: { x: point.x, y: point.y },
-			end: { x: line.end.x, y: line.end.y },
-			track: [...(line.track || [])],
-			endtrack: [...(line.endtrack || [])],
-			passability: { ...line.passability }
-		};
-
-		// Заменяем исходную линию двумя новыми
-		this.lines.splice(lineIndex, 1, line1, line2);
+		// Разбиваем линии
+		this.splitLinesByPoints(splitPointsMap);
 	}
 
 	findIntersections() {
 		const allIntersectionPoints = [];
 
+		// Поиск пересечений линий с линиями
 		for (let i = 0; i < this.lines.length; i++) {
 			for (let j = i + 1; j < this.lines.length; j++) {
 				const intersection = this.getLineIntersection(
@@ -1423,6 +1444,49 @@ class Editor {
 						});
 
 						allIntersectionPoints.push(intersectionPoint);
+					}
+				}
+			}
+		}
+
+		// Поиск пересечений линий с объектами
+		for (const line of this.lines) {
+			for (const obj of this.objects) {
+				const intersection = this.getLineObjectIntersection(line, obj);
+				if (intersection) {
+					const isOnLine = this.isPointOnLineSegment(
+						intersection.point, line.start, line.end, 3
+					);
+
+					if (isOnLine) {
+						// Проверяем, есть ли уже такая точка пересечения
+						let existingPoint = null;
+						for (const point of allIntersectionPoints) {
+							if (point.isNear(intersection.point, 5)) {
+								existingPoint = point;
+								break;
+							}
+						}
+
+						if (!existingPoint) {
+							existingPoint = new IntersectionPoint(intersection.point.x, intersection.point.y);
+							allIntersectionPoints.push(existingPoint);
+						}
+
+						const lineEndpoint = this.getLineEndpointAtIntersection(
+							line, intersection.point, existingPoint.id, 5
+						);
+
+						// Добавляем информацию о пересечении
+						existingPoint.intersections.push({
+							type: 'line-object',
+							line: line,
+							object: obj,
+							lineEndpoint: lineEndpoint,
+							objectSide: intersection.side,
+							lineId: line.id,
+							objectId: obj.id
+						});
 					}
 				}
 			}
@@ -1532,6 +1596,7 @@ class Editor {
 	splitAllIntersectingLines() {
 		const splitPointsMap = new Map();
 
+		// Собираем все точки пересечения линий
 		for (let i = 0; i < this.lines.length; i++) {
 			for (let j = i + 1; j < this.lines.length; j++) {
 				const intersection = this.getLineIntersection(
@@ -1546,6 +1611,21 @@ class Editor {
 					if (isOnLine1 && isOnLine2) {
 						this.addSplitPoint(splitPointsMap, this.lines[i].id, intersection);
 						this.addSplitPoint(splitPointsMap, this.lines[j].id, intersection);
+					}
+				}
+			}
+		}
+
+		// Собираем точки пересечения линий с объектами
+		for (const line of this.lines) {
+			for (const obj of this.objects) {
+				const intersection = this.getLineObjectIntersection(line, obj);
+				if (intersection) {
+					const isOnLine = this.isPointOnLineSegment(
+						intersection.point, line.start, line.end, 3
+					);
+					if (isOnLine) {
+						this.addSplitPoint(splitPointsMap, line.id, intersection.point);
 					}
 				}
 			}
@@ -1589,12 +1669,15 @@ class Editor {
 				{ x: line.end.x, y: line.end.y, isEndpoint: true }
 			];
 
+			// Сортируем точки по расстоянию от начала
 			allPoints.sort((a, b) => {
 				return this.distance(a, line.start) - this.distance(b, line.start);
 			});
 
+			// Удаляем дубликаты
 			const uniquePoints = this.removeDuplicatePoints(allPoints);
 
+			// Создаём отрезки
 			for (let i = 0; i < uniquePoints.length - 1; i++) {
 				const segmentLength = this.distance(uniquePoints[i], uniquePoints[i + 1]);
 				if (segmentLength > 5) {
@@ -1634,12 +1717,14 @@ class Editor {
 	}
 
 	updateLineTrackProperties() {
+		// Очищаем существующие свойства
 		this.lines.forEach(line => {
 			line.track = [];
 			line.endtrack = [];
 			line.passability = {};
 		});
 
+		// Обновляем свойства на основе точек пересечения
 		this.intersectionPoints.forEach(intersectionPoint => {
 			intersectionPoint.intersections.forEach(intersection => {
 				if (intersection.type === 'line-line') {
@@ -1648,10 +1733,16 @@ class Editor {
 
 					this.updateLineProperties(line1, intersection.line1Endpoint, intersectionPoint);
 					this.updateLineProperties(line2, intersection.line2Endpoint, intersectionPoint);
+				} else if (intersection.type === 'line-object') {
+					const line = this.lines.find(l => l.id === intersection.lineId);
+					if (line) {
+						this.updateLineProperties(line, intersection.lineEndpoint, intersectionPoint);
+					}
 				}
 			});
 		});
 
+		// Для линий без пересечений
 		this.lines.forEach(line => {
 			if (Object.keys(line.passability).length === 0) {
 				line.passability.default = 0;
@@ -1683,29 +1774,38 @@ class Editor {
 			line.passability = {};
 
 			this.intersectionPoints.forEach(point => {
-				const intersection = point.intersections.find(intersection => {
+				point.intersections.forEach(intersection => {
 					if (intersection.type === 'line-line') {
-						return intersection.line1Id === line.id || intersection.line2Id === line.id;
+						if (intersection.line1Id === line.id) {
+							let lineEndpoint = intersection.line1Endpoint;
+							if (lineEndpoint === 'start') {
+								line.passability[point.id] = 5;
+							} else if (lineEndpoint === 'end') {
+								line.passability[point.id] = 10;
+							} else if (lineEndpoint === 'middle') {
+								line.passability[point.id] = 0;
+							}
+						} else if (intersection.line2Id === line.id) {
+							let lineEndpoint = intersection.line2Endpoint;
+							if (lineEndpoint === 'start') {
+								line.passability[point.id] = 5;
+							} else if (lineEndpoint === 'end') {
+								line.passability[point.id] = 10;
+							} else if (lineEndpoint === 'middle') {
+								line.passability[point.id] = 0;
+							}
+						}
+					} else if (intersection.type === 'line-object' && intersection.lineId === line.id) {
+						let lineEndpoint = intersection.lineEndpoint;
+						if (lineEndpoint === 'start') {
+							line.passability[point.id] = 5;
+						} else if (lineEndpoint === 'end') {
+							line.passability[point.id] = 10;
+						} else if (lineEndpoint === 'middle') {
+							line.passability[point.id] = 0;
+						}
 					}
-					return false;
 				});
-
-				if (intersection) {
-					let lineEndpoint;
-					if (intersection.line1Id === line.id) {
-						lineEndpoint = intersection.line1Endpoint;
-					} else if (intersection.line2Id === line.id) {
-						lineEndpoint = intersection.line2Endpoint;
-					}
-
-					if (lineEndpoint === 'start') {
-						line.passability[point.id] = 5;
-					} else if (lineEndpoint === 'end') {
-						line.passability[point.id] = 10;
-					} else if (lineEndpoint === 'middle') {
-						line.passability[point.id] = 0;
-					}
-				}
 			});
 
 			if (Object.keys(line.passability).length === 0) {
@@ -1742,6 +1842,9 @@ class Editor {
 						line.passability[point.id] = intersection.line2Endpoint === 'start' ? 5 :
 							intersection.line2Endpoint === 'end' ? 10 : 0;
 					}
+				} else if (intersection.type === 'line-object' && intersection.lineId === line.id) {
+					line.passability[point.id] = intersection.lineEndpoint === 'start' ? 5 :
+						intersection.lineEndpoint === 'end' ? 10 : 0;
 				}
 			});
 		});
@@ -2043,12 +2146,21 @@ class Editor {
 
 			const isSelected = this.selectedElement && this.selectedElement.id === point.id;
 
+			// Разный цвет для разных типов пересечений
+			let fillColor;
+			const hasLineObject = point.intersections.some(i => i.type === 'line-object');
+			const hasLineLine = point.intersections.some(i => i.type === 'line-line');
+
 			if (isSelected) {
-				ctx.fillStyle = 'rgba(0, 255, 0, 0.9)';
-			} else if (point.intersections.length > 1) {
-				ctx.fillStyle = 'rgba(255, 165, 0, 0.8)';
+				fillColor = 'rgba(0, 255, 0, 0.9)';
+			} else if (hasLineObject && hasLineLine) {
+				fillColor = 'rgba(255, 0, 255, 0.8)'; // Фиолетовый для смешанных пересечений
+			} else if (hasLineObject) {
+				fillColor = 'rgba(0, 0, 255, 0.8)'; // Синий для пересечений с объектами
+			} else if (hasLineLine) {
+				fillColor = 'rgba(255, 165, 0, 0.8)'; // Оранжевый для пересечений линий
 			} else {
-				ctx.fillStyle = 'rgba(255, 0, 0, 0.8)';
+				fillColor = 'rgba(255, 0, 0, 0.8)';
 			}
 
 			ctx.beginPath();
@@ -2061,7 +2173,7 @@ class Editor {
 				ctx.stroke();
 			}
 
-			ctx.fillStyle = 'green';
+			ctx.fillStyle = 'white';
 			ctx.font = 'bold 18px Arial';
 			ctx.textAlign = 'center';
 			ctx.textBaseline = 'bottom';
@@ -2359,7 +2471,7 @@ class Editor {
 				if (intersection.type === 'line-line') {
 					message += this.formatLineLineIntersection(intersection, point);
 				} else if (intersection.type === 'line-object') {
-					message += this.formatLineObjectIntersection(intersection);
+					message += this.formatLineObjectIntersection(intersection, point);
 				}
 			});
 		} else {
@@ -2396,6 +2508,26 @@ class Editor {
 		return message;
 	}
 
+	formatLineObjectIntersection(intersection, point) {
+		let message = `  Тип: Линия с объектом\n`;
+		message += `  Линия (ID: ${intersection.lineId || 'нет'}): `;
+		message += `(${intersection.line.start.x.toFixed(1)},${intersection.line.start.y.toFixed(1)}) - `;
+		message += `(${intersection.line.end.x.toFixed(1)},${intersection.line.end.y.toFixed(1)})\n`;
+
+		message += this.formatEndpointInfo(intersection.lineEndpoint, 1);
+
+		message += `  Объект: ${intersection.object.label}\n`;
+		message += `  Тип объекта: ${intersection.object.type}\n`;
+		message += `  Сторона объекта: ${intersection.objectSide}\n`;
+
+		const line = this.lines.find(l => l.id === intersection.lineId);
+		if (line && line.passability && line.passability[point.id]) {
+			message += `    Passability линии в этой точке: ${line.passability[point.id]}\n`;
+		}
+
+		return message;
+	}
+
 	formatEndpointInfo(endpoint, lineNumber) {
 		switch (endpoint) {
 			case 'start': return `    Линия ${lineNumber} подходит НАЧАЛОМ к точке\n`;
@@ -2403,28 +2535,6 @@ class Editor {
 			case 'middle': return `    Точка в СЕРЕДИНЕ линии ${lineNumber}\n`;
 			default: return `    Неизвестно каким концом (линия ${lineNumber})\n`;
 		}
-	}
-
-	formatLineObjectIntersection(intersection) {
-		let message = `  Тип: Линия с объектом\n`;
-		message += `  Линия: (${intersection.line.start.x.toFixed(1)},${intersection.line.start.y.toFixed(1)}) - `;
-		message += `(${intersection.line.end.x.toFixed(1)},${intersection.line.end.y.toFixed(1)})\n`;
-
-		switch (intersection.lineEndpoint) {
-			case 'start': message += `  Линия подходит НАЧАЛОМ к точке\n`; break;
-			case 'end': message += `  Линия подходит КОНЦОМ к точке\n`; break;
-			case 'middle': message += `  Точка находится в СЕРЕДИНЕ линии\n`; break;
-			default: message += `  Неизвестно каким концом\n`;
-		}
-
-		message += `  Объект: ${intersection.object.label}\n`;
-		message += `  Тип объекта: ${intersection.object.type}\n`;
-
-		if (intersection.objectSide) {
-			message += `  Сторона объекта: ${intersection.objectSide}`;
-		}
-
-		return message;
 	}
 
 	showInfoModal(message, point) {
@@ -2529,6 +2639,18 @@ class Editor {
 				const point = this.intersectionPoints.find(p => p.id === trackId);
 				if (point) {
 					message += `  • Точка #${trackId} (${point.x.toFixed(1)}, ${point.y.toFixed(1)})\n`;
+					// Показываем тип пересечения
+					const intersection = point.intersections.find(i =>
+						(i.type === 'line-line' && (i.line1Id === line.id || i.line2Id === line.id)) ||
+						(i.type === 'line-object' && i.lineId === line.id)
+					);
+					if (intersection) {
+						if (intersection.type === 'line-line') {
+							message += `    Тип: пересечение с линией\n`;
+						} else if (intersection.type === 'line-object') {
+							message += `    Тип: пересечение с объектом "${intersection.object.label}"\n`;
+						}
+					}
 				}
 			});
 		} else {
@@ -2541,6 +2663,18 @@ class Editor {
 				const point = this.intersectionPoints.find(p => p.id === endtrackId);
 				if (point) {
 					message += `  • Точка #${endtrackId} (${point.x.toFixed(1)}, ${point.y.toFixed(1)})\n`;
+					// Показываем тип пересечения
+					const intersection = point.intersections.find(i =>
+						(i.type === 'line-line' && (i.line1Id === line.id || i.line2Id === line.id)) ||
+						(i.type === 'line-object' && i.lineId === line.id)
+					);
+					if (intersection) {
+						if (intersection.type === 'line-line') {
+							message += `    Тип: пересечение с линией\n`;
+						} else if (intersection.type === 'line-object') {
+							message += `    Тип: пересечение с объектом "${intersection.object.label}"\n`;
+						}
+					}
 				}
 			});
 		} else {
@@ -2559,6 +2693,19 @@ class Editor {
 						if (value === 5) endpointInfo = '(начало линии)';
 						else if (value === 10) endpointInfo = '(конец линии)';
 						message += `  • Точка #${pointId}: ${value} ${endpointInfo}\n`;
+
+						// Показываем тип пересечения
+						const intersection = point.intersections.find(i =>
+							(i.type === 'line-line' && (i.line1Id === line.id || i.line2Id === line.id)) ||
+							(i.type === 'line-object' && i.lineId === line.id)
+						);
+						if (intersection) {
+							if (intersection.type === 'line-line') {
+								message += `    Тип: пересечение с линией\n`;
+							} else if (intersection.type === 'line-object') {
+								message += `    Тип: пересечение с объектом "${intersection.object.label}"\n`;
+							}
+						}
 					}
 				}
 			});
@@ -2599,6 +2746,19 @@ class Editor {
 						if (value === 5) endpointInfo = '(подходит началом)';
 						else if (value === 10) endpointInfo = '(подходит концом)';
 						message += `  • Точка #${pointId} (${point.x.toFixed(1)}, ${point.y.toFixed(1)}): ${value} ${endpointInfo}\n`;
+
+						// Показываем тип пересечения
+						const intersection = point.intersections.find(i =>
+							(i.type === 'line-line' && (i.line1Id === line.id || i.line2Id === line.id)) ||
+							(i.type === 'line-object' && i.lineId === line.id)
+						);
+						if (intersection) {
+							if (intersection.type === 'line-line') {
+								message += `    Тип: пересечение с линией\n`;
+							} else if (intersection.type === 'line-object') {
+								message += `    Тип: пересечение с объектом "${intersection.object.label}"\n`;
+							}
+						}
 					}
 				}
 			});
@@ -2632,7 +2792,16 @@ class Editor {
 	}
 
 	exportIntersectionData() {
-		const data = this.intersectionPoints.map(point => point.getInfo());
+		const data = this.intersectionPoints.map(point => {
+			const info = point.getInfo();
+			// Добавляем дополнительную информацию о типах пересечений
+			info.intersectionTypes = {
+				lineLine: point.intersections.filter(i => i.type === 'line-line').length,
+				lineObject: point.intersections.filter(i => i.type === 'line-object').length
+			};
+			return info;
+		});
+
 		const json = JSON.stringify(data, null, 2);
 
 		const blob = new Blob([json], { type: 'application/json' });
@@ -2667,7 +2836,8 @@ class Editor {
 	logAllLines() {
 		console.log('Линии:', this.lines);
 		console.log('Объекты:', this.objects);
-		alert(`Линий: ${this.lines.length}, Объектов: ${this.objects.length}`);
+		console.log('Точки пересечения:', this.intersectionPoints);
+		alert(`Линий: ${this.lines.length}, Объектов: ${this.objects.length}, Точек пересечения: ${this.intersectionPoints.length}`);
 	}
 
 	clearIntersections() {
