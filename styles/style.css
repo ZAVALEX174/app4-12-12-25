@@ -325,3 +325,15 @@ button:hover {
   border-radius: 5px;
   margin-top: 10px;
 }
+
+/* Добавьте в style.css */
+.property-input:disabled {
+  background-color: #f0f0f0;
+  color: #666;
+  cursor: not-allowed;
+}
+
+.property-input.readonly {
+  background-color: #e8f0fe;
+  color: #1a73e8;
+}

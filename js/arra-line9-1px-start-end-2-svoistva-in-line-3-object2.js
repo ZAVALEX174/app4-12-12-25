@@ -476,7 +476,10 @@ class Editor {
 		this.showEndpoints = true;
 
 		// Новое свойство для хранения исходных значений tr
-		this.originalTrValues = new Map();
+		// this.originalTrValues = new Map();
+
+		// Флаг для отслеживания, была ли уже установлена первая линия с tr
+		this.firstLineTrSet = false;
 
 		// Оптимизация
 		this.lastDrawnTempLine = null;
@@ -493,261 +496,6 @@ class Editor {
 		this.setupObjectLibrary();
 		this.handleResize();
 		this.redraw();
-	}
-
-	// НОВЫЙ МЕТОД: Применить условие для обновления свойства tr
-	// applyTrConditionAtIntersection(intersectionPoint) {
-	// 	const intersections = intersectionPoint.intersections;
-
-	// 	// Если всего 2 линии в точке пересечения
-	// 	if (intersections.length === 2) {
-	// 		// Проверяем, что одна линия подходит концом, другая началом
-	// 		const hasStart = intersections.some(intersection =>
-	// 			intersection.lineEndpoint === 'start');
-	// 		const hasEnd = intersections.some(intersection =>
-	// 			intersection.lineEndpoint === 'end');
-
-	// 		// Если действительно одна началом, другая концом
-	// 		if (hasStart && hasEnd) {
-	// 			// Свойства tr остаются прежними - ничего не делаем
-	// 			return;
-	// 		}
-	// 	}
-
-	// 	// Если линий в точке больше двух
-	// 	if (intersections.length > 2) {
-	// 		// Подсчитываем количество линий, которые подходят началом
-	// 		const startLinesCount = intersections.filter(intersection =>
-	// 			intersection.lineEndpoint === 'start').length;
-
-	// 		if (startLinesCount > 0) {
-	// 			// Для каждой линии, которая подходит началом
-	// 			intersections.forEach(intersection => {
-	// 				if (intersection.lineEndpoint === 'start') {
-	// 					// Находим соответствующую линию
-	// 					let line = null;
-	// 					if (intersection.type === 'line-line') {
-	// 						if (intersection.line1Id && intersection.line1Endpoint === 'start') {
-	// 							line = this.lines.find(l => l.id === intersection.line1Id);
-	// 						} else if (intersection.line2Id && intersection.line2Endpoint === 'start') {
-	// 							line = this.lines.find(l => l.id === intersection.line2Id);
-	// 						}
-	// 					} else if (intersection.type === 'line-object') {
-	// 						line = this.lines.find(l => l.id === intersection.lineId);
-	// 					}
-
-	// 					if (line) {
-	// 						// Сохраняем исходное значение tr, если еще не сохранено
-	// 						if (!this.originalTrValues.has(line.id)) {
-	// 							// Предполагаем, что у линии есть свойство tr (добавим его позже)
-	// 							if (!line.tr) line.tr = 100; // Значение по умолчанию
-	// 							this.originalTrValues.set(line.id, line.tr);
-	// 						}
-
-	// 						// Делим tr на количество линий, подходящих началом
-	// 						const originalTr = this.originalTrValues.get(line.id);
-	// 						line.tr = originalTr / startLinesCount;
-	// 					}
-	// 				}
-	// 			});
-	// 		}
-	// 	}
-	// }
-
-	// // УПРОЩЕННАЯ ВЕРСИЯ: Применить условие для обновления свойства tr (работает!!!!)
-	// applyTrConditionAtIntersection(intersectionPoint) {
-	// 	const intersections = intersectionPoint.intersections;
-
-	// 	// Считаем общее количество линий в точке
-	// 	const totalLinesInPoint = intersections.reduce((count, inter) => {
-	// 		if (inter.type === 'line-line') {
-	// 			return count + 2; // Две линии в пересечении линии с линией
-	// 		} else if (inter.type === 'line-object') {
-	// 			return count + 1; // Одна линия в пересечении линии с объектом
-	// 		}
-	// 		return count;
-	// 	}, 0);
-
-	// 	// Если ровно 2 линии в точке
-	// 	if (totalLinesInPoint === 2) {
-	// 		// Собираем endpoints для всех линий
-	// 		const endpoints = [];
-	// 		intersections.forEach(inter => {
-	// 			if (inter.type === 'line-line') {
-	// 				endpoints.push(inter.line1Endpoint);
-	// 				endpoints.push(inter.line2Endpoint);
-	// 			} else if (inter.type === 'line-object') {
-	// 				endpoints.push(inter.lineEndpoint);
-	// 			}
-	// 		});
-
-	// 		// Если одна линия концом, другая началом - tr остаются прежними
-	// 		if (endpoints.includes('start') && endpoints.includes('end')) {
-	// 			return; // Ничего не меняем
-	// 		}
-	// 	}
-
-	// 	// Если линий в точке больше двух
-	// 	if (totalLinesInPoint > 2) {
-	// 		// Подсчитываем количество линий, которые подходят началом
-	// 		let startLinesCount = 0;
-	// 		const linesToUpdate = new Map(); // Мапа для линий, которые нужно обновить
-
-	// 		intersections.forEach(inter => {
-	// 			if (inter.type === 'line-line') {
-	// 				if (inter.line1Endpoint === 'start') {
-	// 					startLinesCount++;
-	// 					linesToUpdate.set(inter.line1Id, {
-	// 						endpoint: 'start',
-	// 						originalTr: this.originalTrValues.get(inter.line1Id) || 100
-	// 					});
-	// 				}
-	// 				if (inter.line2Endpoint === 'start') {
-	// 					startLinesCount++;
-	// 					linesToUpdate.set(inter.line2Id, {
-	// 						endpoint: 'start',
-	// 						originalTr: this.originalTrValues.get(inter.line2Id) || 100
-	// 					});
-	// 				}
-	// 			} else if (inter.type === 'line-object') {
-	// 				if (inter.lineEndpoint === 'start') {
-	// 					startLinesCount++;
-	// 					linesToUpdate.set(inter.lineId, {
-	// 						endpoint: 'start',
-	// 						originalTr: this.originalTrValues.get(inter.lineId) || 100
-	// 					});
-	// 				}
-	// 			}
-	// 		});
-
-	// 		// Если есть линии, которые подходят началом
-	// 		if (startLinesCount > 0) {
-	// 			linesToUpdate.forEach((info, lineId) => {
-	// 				if (info.endpoint === 'start') {
-	// 					const line = this.lines.find(l => l.id === lineId);
-	// 					if (line) {
-	// 						// Сохраняем исходное значение, если еще не сохранено
-	// 						if (!this.originalTrValues.has(lineId)) {
-	// 							this.originalTrValues.set(lineId, line.tr || 100);
-	// 						}
-
-	// 						// Делим tr на количество линий, подходящих началом
-	// 						const originalTr = this.originalTrValues.get(lineId);
-	// 						line.tr = originalTr / startLinesCount;
-	// 					}
-	// 				}
-	// 			});
-	// 		}
-	// 	}
-	// }
-
-	// // НОВЫЙ МЕТОД: Обновить tr для всех точек пересечения
-	// updateAllTrValues() {
-	// 	// Сначала сбросим сохраненные значения
-	// 	this.originalTrValues.clear();
-
-	// 	// Установим начальные значения tr для всех линий
-	// 	this.lines.forEach(line => {
-	// 		if (!line.tr) line.tr = 100; // Значение по умолчанию
-	// 		this.originalTrValues.set(line.id, line.tr);
-	// 	});
-
-	// 	// Применим условие для каждой точки пересечения
-	// 	this.intersectionPoints.forEach(point => {
-	// 		this.applyTrConditionAtIntersection(point);
-	// 	});
-	// }
-
-
-
-
-	// НОВЫЙ МЕТОД: Применить условие для обновления свойства tr
-	applyTrConditionAtIntersection(intersectionPoint) {
-		const intersections = intersectionPoint.intersections;
-
-		// Если ровно 2 линии в точке пересечения
-		if (intersections.length === 2) {
-			// Проверяем, что одна линия подходит концом, другая началом
-			const endpointTypes = intersections.map(intersection =>
-				this.getLineEndpointFromIntersection(intersection));
-
-			const hasStart = endpointTypes.includes('start');
-			const hasEnd = endpointTypes.includes('end');
-
-			// Если одна концом, другая началом - tr остаются прежними
-			if (hasStart && hasEnd) {
-				// Ничего не меняем
-				return;
-			}
-			// Если две линии подходят одинаковыми концами (обе началом или обе концом)
-			// tr тоже не меняем (это явно не указано в условии, но логично)
-			return;
-		}
-
-		// Если линий в точке больше двух
-		if (intersections.length > 2) {
-			// Подсчитываем количество линий, которые подходят началом
-			const startLinesCount = intersections.filter(intersection =>
-				this.getLineEndpointFromIntersection(intersection) === 'start').length;
-
-			if (startLinesCount > 0) {
-				// Для каждой линии, которая подходит началом
-				intersections.forEach(intersection => {
-					if (this.getLineEndpointFromIntersection(intersection) === 'start') {
-						// Находим соответствующую линию
-						let line = null;
-						if (intersection.type === 'line-line') {
-							if (intersection.line1Id && this.getLineEndpointFromIntersection(intersection, 'line1') === 'start') {
-								line = this.lines.find(l => l.id === intersection.line1Id);
-							} else if (intersection.line2Id && this.getLineEndpointFromIntersection(intersection, 'line2') === 'start') {
-								line = this.lines.find(l => l.id === intersection.line2Id);
-							}
-						} else if (intersection.type === 'line-object') {
-							line = this.lines.find(l => l.id === intersection.lineId);
-						}
-
-						if (line) {
-							// Сохраняем исходное значение tr, если еще не сохранено
-							if (!this.originalTrValues.has(line.id)) {
-								if (!line.tr) line.tr = 100; // Значение по умолчанию
-								this.originalTrValues.set(line.id, line.tr);
-							}
-
-							// Делим tr на количество линий, подходящих началом
-							const originalTr = this.originalTrValues.get(line.id);
-							line.tr = originalTr / startLinesCount;
-						}
-					}
-				});
-			}
-
-			// Линии, которые подходят концом или серединой, сохраняют tr без изменений
-			intersections.forEach(intersection => {
-				const endpoint = this.getLineEndpointFromIntersection(intersection);
-				if (endpoint === 'end' || endpoint === 'middle') {
-					// Находим соответствующую линию
-					let line = null;
-					if (intersection.type === 'line-line') {
-						if (intersection.line1Id && this.getLineEndpointFromIntersection(intersection, 'line1') === endpoint) {
-							line = this.lines.find(l => l.id === intersection.line1Id);
-						} else if (intersection.line2Id && this.getLineEndpointFromIntersection(intersection, 'line2') === endpoint) {
-							line = this.lines.find(l => l.id === intersection.line2Id);
-						}
-					} else if (intersection.type === 'line-object') {
-						line = this.lines.find(l => l.id === intersection.lineId);
-					}
-
-					if (line) {
-						// Сохраняем исходное значение tr, если еще не сохранено
-						if (!this.originalTrValues.has(line.id)) {
-							if (!line.tr) line.tr = 100; // Значение по умолчанию
-							this.originalTrValues.set(line.id, line.tr);
-						}
-						// tr остается без изменений
-					}
-				}
-			});
-		}
 	}
 
 	// НОВЫЙ МЕТОД: Получить endpoint линии из пересечения
@@ -769,132 +517,17 @@ class Editor {
 		return null;
 	}
 
-	// НОВЫЙ МЕТОД: Обновить tr для всех линий
-	updateAllTrValues() {
-		// Сначала сбросим сохраненные значения
-		this.originalTrValues.clear();
-
-		// Установим начальные значения tr для всех линий
-		this.lines.forEach(line => {
-			if (!line.tr) line.tr = 100; // Значение по умолчанию
-			this.originalTrValues.set(line.id, line.tr);
-		});
-
-		// Создаем мапу для отслеживания, какие линии в каких точках были обработаны
-		const processedLinesInPoints = new Map();
-
-		// Применяем условие для каждой точки пересечения
-		this.intersectionPoints.forEach(point => {
-			// Собираем все линии в этой точке
-			const linesInPoint = [];
-
-			point.intersections.forEach(intersection => {
-				if (intersection.type === 'line-line') {
-					if (intersection.line1Id) {
-						linesInPoint.push({
-							lineId: intersection.line1Id,
-							endpoint: intersection.line1Endpoint,
-							intersection: intersection
-						});
-					}
-					if (intersection.line2Id) {
-						linesInPoint.push({
-							lineId: intersection.line2Id,
-							endpoint: intersection.line2Endpoint,
-							intersection: intersection
-						});
-					}
-				} else if (intersection.type === 'line-object') {
-					if (intersection.lineId) {
-						linesInPoint.push({
-							lineId: intersection.lineId,
-							endpoint: intersection.lineEndpoint,
-							intersection: intersection
-						});
-					}
-				}
-			});
-
-			// Если линий больше двух
-			if (linesInPoint.length > 2) {
-				// Подсчитываем количество линий, которые подходят началом
-				const startLinesCount = linesInPoint.filter(item => item.endpoint === 'start').length;
-
-				if (startLinesCount > 0) {
-					// Для каждой линии, которая подходит началом
-					linesInPoint.forEach(item => {
-						if (item.endpoint === 'start') {
-							const line = this.lines.find(l => l.id === item.lineId);
-							if (line) {
-								// Уникальный ключ для линии в этой точке
-								const linePointKey = `${line.id}_${point.id}`;
-
-								if (!processedLinesInPoints.has(linePointKey)) {
-									processedLinesInPoints.set(linePointKey, true);
-
-									// Сохраняем исходное значение tr, если еще не сохранено
-									if (!this.originalTrValues.has(line.id)) {
-										this.originalTrValues.set(line.id, line.tr);
-									}
-
-									// Делим tr на количество линий, подходящих началом
-									const originalTr = this.originalTrValues.get(line.id);
-									line.tr = originalTr / startLinesCount;
-								}
-							}
-						}
-					});
-				}
-			}
-		});
-
-		// Для линий, которые не были обработаны (нет пересечений или только 1-2 пересечения),
-		// оставляем исходное значение tr
-		this.lines.forEach(line => {
-			if (!this.originalTrValues.has(line.id)) {
-				this.originalTrValues.set(line.id, line.tr);
-			}
-		});
-	}
-
-
-
-	// НОВЫЙ МЕТОД: Получить информацию о tr для линии
-	getLineTrInfo(line) {
-		const pointIds = [];
-
-		// Находим все точки пересечения, где эта линия присутствует
-		this.intersectionPoints.forEach(point => {
-			const intersection = point.intersections.find(i =>
-				(i.type === 'line-line' && (i.line1Id === line.id || i.line2Id === line.id)) ||
-				(i.type === 'line-object' && i.lineId === line.id)
-			);
-
-			if (intersection) {
-				pointIds.push({
-					pointId: point.id,
-					endpoint: intersection.lineEndpoint ||
-						(intersection.line1Id === line.id ? intersection.line1Endpoint : intersection.line2Endpoint),
-					linesAtPoint: point.intersections.length
-				});
-			}
-		});
-
-		return {
-			lineId: line.id,
-			tr: line.tr || 100,
-			originalTr: this.originalTrValues.get(line.id) || 100,
-			intersectionPoints: pointIds
-		};
-	}
-
-	// МОДИФИЦИРОВАННЫЙ МЕТОД: Обновить свойства линий на основе точек пересечения
+	// МОДИФИЦИРОВАННЫЙ МЕТОД: Обновить свойства линий
 	updateLineTrackProperties() {
 		// Очищаем существующие свойства
 		this.lines.forEach(line => {
 			line.track = [];
 			line.endtrack = [];
 			line.passability = {};
+			// tr по умолчанию всегда 0, кроме первой установленной линии
+			if (line.tr === undefined) {
+				line.tr = 0;
+			}
 		});
 
 		// Обновляем свойства на основе точек пересечения
@@ -921,135 +554,30 @@ class Editor {
 				line.passability.default = 0;
 			}
 		});
-
-		// Обновляем значения tr на основе условий
-		this.updateAllTrValues();
 	}
 
-	// // НОВЫЙ МЕТОД: Показать информацию о tr для выбранной линии
-	// showLineTrInfo() {
-	// 	if (this.selectedElement && this.selectedElement.start && this.selectedElement.end) {
-	// 		const line = this.selectedElement;
-	// 		const trInfo = this.getLineTrInfo(line);
+	// НОВЫЙ МЕТОД: Показать диалог для установки tr первой линии
+	showSetFirstLineTrDialog(line) {
+		const value = prompt(
+			'Установите значение tr для первой линии:\n\n' +
+			'• По умолчанию tr=0 для всех линий\n' +
+			'• Это единственная возможность установить tr вручную\n' +
+			'• Все остальные линии будут иметь tr=0',
+			'100'
+		);
 
-	// 		let message = `Информация о свойстве tr для линии (ID: ${line.id}):\n`;
-	// 		message += `Текущее значение tr: ${trInfo.tr.toFixed(2)}\n`;
-	// 		message += `Исходное значение tr: ${trInfo.originalTr.toFixed(2)}\n\n`;
-
-	// 		if (trInfo.intersectionPoints.length > 0) {
-	// 			message += `Точки пересечения:\n`;
-	// 			trInfo.intersectionPoints.forEach(point => {
-	// 				message += `  • Точка #${point.pointId}: `;
-	// 				message += `подходит ${point.endpoint === 'start' ? 'началом' : point.endpoint === 'end' ? 'концом' : 'серединой'}, `;
-	// 				message += `всего линий в точке: ${point.linesAtPoint}\n`;
-	// 			});
-	// 		} else {
-	// 			message += `Линия не имеет точек пересечения\n`;
-	// 		}
-
-	// 		// Добавляем информацию о примененном условии
-	// 		message += `\nПримененное условие:\n`;
-	// 		trInfo.intersectionPoints.forEach(point => {
-	// 			if (point.linesAtPoint === 2) {
-	// 				message += `  • В точке #${point.pointId}: 2 линии - tr осталось без изменений\n`;
-	// 			} else if (point.linesAtPoint > 2 && point.endpoint === 'start') {
-	// 				message += `  • В точке #${point.pointId}: ${point.linesAtPoint} линий, линия подходит началом - tr поделено\n`;
-	// 			}
-	// 		});
-
-	// 		console.log(message);
-	// 		alert(message);
-	// 	} else {
-	// 		alert('Выберите линию для просмотра информации о свойстве tr');
-	// 	}
-	// }
-
-	// НОВЫЙ МЕТОД: Показать информацию о tr для выбранной линии
-	showLineTrInfo() {
-		if (this.selectedElement && this.selectedElement.start && this.selectedElement.end) {
-			const line = this.selectedElement;
-
-			let message = `Информация о свойстве tr для линии (ID: ${line.id}):\n`;
-			message += `Текущее значение tr: ${line.tr !== undefined ? line.tr.toFixed(2) : 'не задано'}\n`;
-			message += `Исходное значение tr: ${this.originalTrValues.get(line.id) || 100}\n\n`;
-
-			// Находим все точки пересечения этой линии
-			const pointInfo = [];
-
-			this.intersectionPoints.forEach(point => {
-				point.intersections.forEach(intersection => {
-					let isLineInIntersection = false;
-					let endpoint = null;
-
-					if (intersection.type === 'line-line') {
-						if (intersection.line1Id === line.id) {
-							isLineInIntersection = true;
-							endpoint = intersection.line1Endpoint;
-						} else if (intersection.line2Id === line.id) {
-							isLineInIntersection = true;
-							endpoint = intersection.line2Endpoint;
-						}
-					} else if (intersection.type === 'line-object') {
-						if (intersection.lineId === line.id) {
-							isLineInIntersection = true;
-							endpoint = intersection.lineEndpoint;
-						}
-					}
-
-					if (isLineInIntersection) {
-						pointInfo.push({
-							pointId: point.id,
-							endpoint: endpoint,
-							totalLinesInPoint: point.intersections.reduce((count, inter) => {
-								if (inter.type === 'line-line') {
-									return count + 2;
-								} else if (inter.type === 'line-object') {
-									return count + 1;
-								}
-								return count;
-							}, 0),
-							type: intersection.type
-						});
-					}
-				});
-			});
-
-			if (pointInfo.length > 0) {
-				message += `Точки пересечения:\n`;
-				pointInfo.forEach(info => {
-					message += `  • Точка #${info.pointId}: `;
-					message += `подходит ${info.endpoint === 'start' ? 'началом' : info.endpoint === 'end' ? 'концом' : 'серединой'}, `;
-					message += `всего линий в точке: ${info.totalLinesInPoint}, `;
-					message += `тип: ${info.type === 'line-line' ? 'линия-линия' : 'линия-объект'}\n`;
-				});
-
-				// Определяем, было ли применено условие
-				const hasMoreThanTwoLines = pointInfo.some(info => info.totalLinesInPoint > 2);
-				const hasStartEndpoint = pointInfo.some(info => info.endpoint === 'start');
-
-				message += `\nПримененное условие для tr:\n`;
-				if (hasMoreThanTwoLines && hasStartEndpoint) {
-					const startLinesCount = pointInfo.filter(info => info.endpoint === 'start').length;
-					message += `• В точке больше 2 линий и линия подходит началом\n`;
-					message += `• Количество линий, подходящих началом: ${startLinesCount}\n`;
-					message += `• tr поделено на ${startLinesCount}\n`;
-				} else if (pointInfo.length === 2) {
-					const endpoints = pointInfo.map(info => info.endpoint);
-					if (endpoints.includes('start') && endpoints.includes('end')) {
-						message += `• В точке ровно 2 линии (одна концом, другая началом)\n`;
-						message += `• tr осталось без изменений\n`;
-					}
-				} else {
-					message += `• Условие для изменения tr не применилось\n`;
+		if (value !== null) {
+			const numValue = parseFloat(value);
+			if (!isNaN(numValue)) {
+				const success = this.setLineTr(line, numValue);
+				if (success) {
+					this.needsRedraw = true;
+					this.redraw();
+					alert(`Значение tr=${numValue} установлено для первой линии (ID: ${line.id})`);
 				}
 			} else {
-				message += `Линия не имеет точек пересечения\n`;
+				alert('Введите числовое значение для tr');
 			}
-
-			console.log(message);
-			alert(message);
-		} else {
-			alert('Выберите линию для просмотра информации о свойстве tr');
 		}
 	}
 
@@ -1093,27 +621,159 @@ class Editor {
 		this.setupTrPropertyButtons();
 	}
 
-	// НОВЫЙ МЕТОД: Настройка кнопок для работы с tr
+	// МОДИФИЦИРОВАННЫЙ МЕТОД: Показать информацию о tr
+	showLineTrInfo() {
+		if (this.selectedElement && this.selectedElement.start && this.selectedElement.end) {
+			const line = this.selectedElement;
+
+			let message = `Информация о свойстве tr для линии (ID: ${line.id}):\n`;
+			message += `Текущее значение tr: ${line.tr !== undefined ? line.tr.toFixed(2) : '0.00'}\n\n`;
+
+			// Определяем статус линии
+			if (this.firstLineTrSet && this.lines[0] && this.lines[0].id === line.id) {
+				message += `Статус: ПЕРВАЯ ЛИНИЯ (tr установлено вручную)\n`;
+				message += `Примечание: Это единственная линия, для которой можно установить tr\n`;
+			} else if (this.firstLineTrSet) {
+				message += `Статус: ОБЫЧНАЯ ЛИНИЯ\n`;
+				message += `Примечание: tr=0 (автоматически)\n`;
+			} else {
+				message += `Статус: ПЕРВАЯ ЛИНИЯ (ожидает установки tr)\n`;
+				message += `Примечание: Нажмите "Установить tr для первой линии" чтобы задать значение\n`;
+			}
+
+			// Информация о пересечениях
+			const pointInfo = [];
+			this.intersectionPoints.forEach(point => {
+				point.intersections.forEach(intersection => {
+					let isLineInIntersection = false;
+					let endpoint = null;
+
+					if (intersection.type === 'line-line') {
+						if (intersection.line1Id === line.id) {
+							isLineInIntersection = true;
+							endpoint = intersection.line1Endpoint;
+						} else if (intersection.line2Id === line.id) {
+							isLineInIntersection = true;
+							endpoint = intersection.line2Endpoint;
+						}
+					} else if (intersection.type === 'line-object') {
+						if (intersection.lineId === line.id) {
+							isLineInIntersection = true;
+							endpoint = intersection.lineEndpoint;
+						}
+					}
+
+					if (isLineInIntersection) {
+						pointInfo.push({
+							pointId: point.id,
+							endpoint: endpoint,
+							totalLinesInPoint: point.intersections.reduce((count, inter) => {
+								if (inter.type === 'line-line') {
+									return count + 2;
+								} else if (inter.type === 'line-object') {
+									return count + 1;
+								}
+								return count;
+							}, 0),
+							type: intersection.type
+						});
+					}
+				});
+			});
+
+			if (pointInfo.length > 0) {
+				message += `\nТочки пересечения:\n`;
+				pointInfo.forEach(info => {
+					message += `  • Точка #${info.pointId}: `;
+					message += `подходит ${info.endpoint === 'start' ? 'началом' : info.endpoint === 'end' ? 'концом' : 'серединой'}, `;
+					message += `всего линий в точке: ${info.totalLinesInPoint}, `;
+					message += `тип: ${info.type === 'line-line' ? 'линия-линия' : 'линия-объект'}\n`;
+				});
+			} else {
+				message += `\nЛиния не имеет точек пересечения\n`;
+			}
+
+			console.log(message);
+			alert(message);
+		} else {
+			alert('Выберите линию для просмотра информации о свойстве tr');
+		}
+	}
+
+	// НОВЫЙ МЕТОД: Установить tr для первой линии (вызывается из UI)
+	setFirstLineTr() {
+		if (this.lines.length === 0) {
+			alert('Нет линий на холсте. Сначала нарисуйте первую линию.');
+			return;
+		}
+
+		// Находим первую линию
+		const firstLine = this.lines[0];
+		if (!firstLine) {
+			alert('Не удалось найти первую линию');
+			return;
+		}
+
+		this.selectedElement = firstLine;
+		this.showSetFirstLineTrDialog(firstLine);
+	}
+
+	// МОДИФИЦИРОВАННЫЙ МЕТОД: Настройка кнопок для работы с tr
 	setupTrPropertyButtons() {
 		const showTrInfo = document.getElementById('showTrInfo');
 		if (showTrInfo) {
 			showTrInfo.addEventListener('click', () => this.showLineTrInfo());
 		}
 
-		const updateAllTr = document.getElementById('updateAllTr');
-		if (updateAllTr) {
-			updateAllTr.addEventListener('click', () => {
-				this.updateAllTrValues();
-				this.needsRedraw = true;
-				this.redraw();
-				alert('Значения tr обновлены согласно условиям');
-			});
+		// Заменяем кнопку updateAllTr на setFirstLineTr
+		const setFirstLineTrBtn = document.getElementById('setFirstLineTr');
+		if (setFirstLineTrBtn) {
+			setFirstLineTrBtn.addEventListener('click', () => this.setFirstLineTr());
+			// Обновляем текст кнопки
+			setFirstLineTrBtn.textContent = 'Установить tr для первой линии';
 		}
 
 		const exportTrData = document.getElementById('exportTrData');
 		if (exportTrData) {
 			exportTrData.addEventListener('click', () => this.exportTrData());
 		}
+	}
+
+	// МОДИФИЦИРОВАННЫЙ МЕТОД: Экспорт данных о tr
+	exportTrData() {
+		const trData = this.lines.map(line => {
+			return {
+				lineId: line.id,
+				start: line.start,
+				end: line.end,
+				tr: line.tr || 0,
+				isFirstLine: this.firstLineTrSet && this.lines[0] && this.lines[0].id === line.id,
+				properties: {
+					cheight: line.cheight,
+					cwidth: line.cwidth,
+					cvolume: line.cvolume
+				}
+			};
+		});
+
+		const json = JSON.stringify({
+			lines: trData,
+			firstLineTrSet: this.firstLineTrSet,
+			totalLines: this.lines.length
+		}, null, 2);
+
+		const blob = new Blob([json], { type: 'application/json' });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = 'tr_data.json';
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		URL.revokeObjectURL(url);
+
+		console.log('Данные о tr экспортированы:', trData);
+		alert('Данные о свойстве tr экспортированы в файл "tr_data.json"');
 	}
 
 	setupModeButtons() {
@@ -1477,6 +1137,7 @@ class Editor {
 		}
 	}
 
+	// МОДИФИЦИРОВАННЫЙ МЕТОД: Начать рисование линии
 	startDrawing(pos) {
 		this.isDrawing = true;
 		this.tempLine = {
@@ -1491,7 +1152,7 @@ class Editor {
 			track: [],
 			endtrack: [],
 			passability: {},
-			tr: 100 // Добавляем свойство tr с начальным значением
+			tr: 0 // По умолчанию 0
 		};
 		this.lastDrawnTempLine = null;
 		this.tempLineDrawn = false;
@@ -1516,6 +1177,7 @@ class Editor {
 		});
 	}
 
+	// МОДИФИЦИРОВАННЫЙ МЕТОД: Завершить рисование линии
 	finishDrawing() {
 		if (this.animationFrameId) {
 			cancelAnimationFrame(this.animationFrameId);
@@ -1529,13 +1191,21 @@ class Editor {
 				const newLine = {
 					...this.tempLine,
 					id: Date.now() + Math.random(),
-					tr: 100 // Устанавливаем начальное значение tr
+					tr: 0 // Всегда 0 по умолчанию
 				};
 
 				// Добавляем линию
 				this.lines.push(newLine);
 
-				// Проверяем пересечение с объектами и создаем точки пересечения
+				// Если это первая линия на холсте, предлагаем установить tr
+				if (this.lines.length === 1) {
+					setTimeout(() => {
+						this.selectedElement = newLine;
+						this.showSetFirstLineTrDialog(newLine);
+					}, 100);
+				}
+
+				// Проверяем пересечение с объектами
 				this.checkLineObjectIntersections(newLine);
 
 				// Разбиваем линии между собой
@@ -2425,40 +2095,8 @@ class Editor {
 		return line.passability;
 	}
 
-	// НОВЫЙ МЕТОД: Экспорт данных о tr
-	exportTrData() {
-		const trData = this.lines.map(line => {
-			const trInfo = this.getLineTrInfo(line);
-			return {
-				lineId: line.id,
-				start: line.start,
-				end: line.end,
-				currentTr: trInfo.tr,
-				originalTr: trInfo.originalTr,
-				intersectionPoints: trInfo.intersectionPoints.map(p => ({
-					pointId: p.pointId,
-					endpoint: p.endpoint,
-					linesAtPoint: p.linesAtPoint
-				}))
-			};
-		});
 
-		const json = JSON.stringify(trData, null, 2);
-
-		const blob = new Blob([json], { type: 'application/json' });
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = 'tr_данные.json';
-		document.body.appendChild(a);
-		a.click();
-		document.body.removeChild(a);
-		URL.revokeObjectURL(url);
-
-		console.log('Данные о tr экспортированы:', trData);
-		alert('Данные о свойстве tr экспортированы в файл "tr_данные.json"');
-	}
-
+	// МОДИФИЦИРОВАННЫЙ МЕТОД: Отрисовка свойств линии
 	// МОДИФИЦИРОВАННЫЙ МЕТОД: Отрисовка свойств линии
 	drawLineProperties(line, ctx = this.ctx) {
 		const midPoint = {
@@ -2476,13 +2114,38 @@ class Editor {
 		if (line.cheight) properties.push(`H:${line.cheight}`);
 		if (line.cwidth) properties.push(`W:${line.cwidth}`);
 		if (line.cvolume) properties.push(`V:${line.cvolume}`);
-		if (line.tr !== undefined) properties.push(`tr:${line.tr.toFixed(1)}`); // Добавляем отображение tr
+
+		// Показываем tr только если оно не равно 0
+		if (line.tr !== undefined && line.tr !== 0) {
+			properties.push(`tr:${line.tr.toFixed(1)}`);
+		}
 
 		if (properties.length > 0) {
 			ctx.fillText(properties.join(' '), midPoint.x, midPoint.y + 15);
 		}
 
+		// Добавляем маркер для первой линии с tr
+		if (this.firstLineTrSet && this.lines[0] && this.lines[0].id === line.id) {
+			ctx.fillStyle = 'red';
+			ctx.beginPath();
+			ctx.arc(midPoint.x, midPoint.y - 10, 3, 0, Math.PI * 2);
+			ctx.fill();
+		}
+
 		ctx.restore();
+	}
+
+	// НОВЫЙ МЕТОД: Установить tr для линии
+	setLineTr(line, value) {
+		if (line && !this.firstLineTrSet) {
+			line.tr = value;
+			this.firstLineTrSet = true;
+
+			// Показываем сообщение о успешной установке
+			console.log(`Установлено tr=${value} для первой линии (ID: ${line.id})`);
+			return true;
+		}
+		return false;
 	}
 
 	redraw() {
@@ -3001,7 +2664,7 @@ class Editor {
 		if (panel) panel.style.display = 'none';
 		this.selectedElement = null;
 	}
-
+	// МОДИФИЦИРОВАННЫЙ МЕТОД: Показать панель свойств линии
 	showLinePropertiesPanel(line) {
 		const panel = document.getElementById('linePropertiesPanel');
 		const cheightInput = document.getElementById('lineCheight');
@@ -3009,6 +2672,7 @@ class Editor {
 		const cvolumeInput = document.getElementById('lineCvolume');
 		const lengthInput = document.getElementById('lineLength');
 		const trInput = document.getElementById('lineTr');
+		const trContainer = document.getElementById('lineTrContainer');
 
 		if (!panel || !cheightInput || !cwidthInput || !cvolumeInput || !lengthInput) return;
 
@@ -3017,9 +2681,18 @@ class Editor {
 		cvolumeInput.value = line.cvolume || '';
 		lengthInput.value = `${this.calculateLineLength(line).toFixed(1)}m`;
 
-		// Добавляем поле для tr
-		if (trInput) {
-			trInput.value = line.tr !== undefined ? line.tr.toFixed(2) : '100.00';
+		// Поле tr доступно только для первой линии, у которой установлен tr
+		if (trInput && trContainer) {
+			if (this.firstLineTrSet && this.lines[0] && this.lines[0].id === line.id) {
+				trInput.value = line.tr !== undefined ? line.tr.toFixed(2) : '0.00';
+				trInput.disabled = false;
+				trContainer.style.opacity = '1';
+			} else {
+				trInput.value = line.tr !== undefined ? line.tr.toFixed(2) : '0.00';
+				trInput.disabled = true;
+				trContainer.style.opacity = '0.5';
+				trContainer.title = 'tr можно устанавливать только для первой линии';
+			}
 		}
 
 		panel.style.display = 'block';
@@ -3046,6 +2719,7 @@ class Editor {
 		this.redraw();
 	}
 
+	// МОДИФИЦИРОВАННЫЙ МЕТОД: Применить свойства линии
 	applyLineProperties() {
 		if (!this.selectedElement || !this.selectedElement.start) return;
 
@@ -3060,11 +2734,13 @@ class Editor {
 		this.selectedElement.cwidth = cwidthInput.value ? parseFloat(cwidthInput.value) : null;
 		this.selectedElement.cvolume = cvolumeInput.value ? parseFloat(cvolumeInput.value) : null;
 
-		// Обновляем значение tr, если есть поле
-		if (trInput && trInput.value) {
-			this.selectedElement.tr = parseFloat(trInput.value);
-			// Сохраняем новое исходное значение
-			this.originalTrValues.set(this.selectedElement.id, this.selectedElement.tr);
+		// Обновляем tr только если это первая линия и поле не заблокировано
+		if (trInput && !trInput.disabled && trInput.value) {
+			const newTr = parseFloat(trInput.value);
+			if (!isNaN(newTr)) {
+				this.selectedElement.tr = newTr;
+				this.firstLineTrSet = true;
+			}
 		}
 
 		this.needsRedraw = true;
