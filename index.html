@@ -27,22 +27,22 @@
           <button
             class="mode-btn active"
             data-mode="draw"
-          >✏️ Рисовать
+          >✏️
           </button>
           <button
             class="mode-btn"
             data-mode="move"
-          >↕️ Перемещать
+          >↕️
           </button>
           <button
             class="mode-btn"
             data-mode="edit"
-          >🔧 Редактировать
+          >🔧
           </button>
           <button
             class="mode-btn"
             data-mode="delete"
-          >❌ Удалить
+          >❌
           </button>
         </div>
       </div>
@@ -181,6 +181,17 @@
               class="property-input"
               min="1"
               max="200"
+            >
+          </div>
+
+          <div class="property-group">
+            <label class="property-label">Объем воздуха:</label>
+            <input
+              type="number"
+              id="propertyAirValue"
+              class="property-input"
+              step="0.1" min="0"
+              min="0"
             >
           </div>
           <div class="property-actions">

@@ -11,6 +11,7 @@ class CanvasObject {
     this.label = label;
     this.selected = false;
     this.properties = {};
+    this.airValue = 0; // НОВОЕ ПОЛЕ
     this.image = null;
     this.imageLoaded = false;
     this.rotation = 0;
@@ -102,6 +103,12 @@ class CanvasObject {
 
     if (this.selected) {
       this.drawSelection(ctx);
+      // Отображаем airValue при выделении
+      ctx.fillStyle = '#ff0000';
+      ctx.font = '10px Arial';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillText(`Air: ${this.airValue}`, this.x - 5, this.y - 30);
     }
   }
 
@@ -141,6 +148,7 @@ class CanvasObject {
       color: this.color,
       label: this.label,
       rotation: this.rotation,
+      airValue: this.airValue,
       ...this.properties
     };
   }
@@ -163,6 +171,14 @@ class CanvasObject {
 
   setRotation(rotation) {
     this.rotation = rotation;
+  }
+
+  getAirValue() {
+    return this.airValue || 0;
+  }
+
+  setAirValue(value) {
+    this.airValue = parseFloat(value) || 0;
   }
 }
 
@@ -276,161 +292,187 @@ class ObjectFactory {
       height: 30,
       image: './img/dvercloses.png',
       label: 'Дверь закрытая',
-      category: 'doors_windows'
+      category: 'doors_windows',
+      airValue: 1.0
     },
     'door2': {
       width: 30,
       height: 30,
       image: './img/dverwentoknowood.png',
       label: 'Дверь деревянная с вентоткном',
-      category: 'doors_windows'
+      category: 'doors_windows',
+      airValue: 1.0
     },
     'door3': {
       width: 40,
       height: 30,
       image: './img/dverventrech.png',
       label: 'Дверь с вентрешеткой',
-      category: 'doors_windows'
+      category: 'doors_windows',
+      airValue: 1.0
     },
     'door4': {
       width: 30,
       height: 30,
       image: './img/dveropenmetall.png',
       label: 'Дверь металлическая открытая',
-      category: 'doors_windows'
+      category: 'doors_windows',
+      airValue: 1.0
     },
     'fan': {
       width: 40,
       height: 40,
       image: './img/fan.png',
       label: 'Вентилятор основной',
-      category: 'fan'
+      category: 'fan',
+      airValue: 1.0
     },
     'fan2': {
       width: 40,
       height: 40,
       image: './img/fan2.png',
       label: 'Вентилятор',
-      category: 'fan'
+      category: 'fan',
+      airValue: 1.0
     },
     'fire': {
       width: 40,
       height: 40,
       image: './img/fire.png',
       label: 'Огонь',
-      category: 'fire'
+      category: 'fire',
+      airValue: 1.0
     },
     'fire2': {
       width: 40,
       height: 40,
       image: './img/pozarniigidrant.png',
       label: 'Пожарный гидрант',
-      category: 'fire'
+      category: 'fire',
+      airValue: 1.0
     },
     'boom': {
       width: 40,
       height: 40,
       image: './img/massovievzivniepaboti.png',
       label: 'Массовые взрывные работы',
-      category: 'boom'
+      category: 'boom',
+      airValue: 1.0
     },
     'boom2': {
       width: 40,
       height: 40,
       image: './img/vzrivnieraboti.png',
       label: 'Взрывные работы',
-      category: 'boom'
+      category: 'boom',
+      airValue: 1.0
     },
     'medical': {
       width: 40,
       height: 40,
       image: './img/medpunkt.png',
       label: 'Медицинский пункт',
-      category: 'medical'
+      category: 'medical',
+      airValue: 1.0
     },
     'building': {
       width: 30,
       height: 30,
       image: './img/nadshahtnoe.png',
       label: 'Надшахтное строение',
-      category: 'building'
+      category: 'building',
+      airValue: 1.0
     },
     'pumps': {
       width: 40,
       height: 40,
       image: './img/nanospogruznoi.png',
       label: 'Насос погружной',
-      category: 'pumps'
+      category: 'pumps',
+      airValue: 1.0
     },
     'pumps2': {
       width: 40,
       height: 40,
       image: './img/nasosnayastancia.png',
       label: 'Насосная станция',
-      category: 'pumps'
+      category: 'pumps',
+      airValue: 1.0
     },
     'people': {
       width: 40,
       height: 40,
       image: './img/people.png',
       label: 'Люди',
-      category: 'people'
+      category: 'people',
+      airValue: 1.0
     },
     'jumper': {
       width: 30,
       height: 30,
       image: './img/petemichkabeton.png',
       label: 'Перемычка бетонная',
-      category: 'jumper'
+      category: 'jumper',
+      airValue: 1.0
     },
     'jumper2': {
       width: 30,
       height: 30,
       image: './img/petemichkakirpich.png',
       label: 'Перемычка кирпичная',
-      category: 'jumper'
+      category: 'jumper',
+      airValue: 1.0
     },
     'jumper3': {
       width: 30,
       height: 30,
       image: './img/petemichkametall.png',
       label: 'Перемычка металлическая',
-      category: 'jumper'
+      category: 'jumper',
+      airValue: 1.0
     },
     'jumper4': {
       width: 30,
       height: 30,
       image: './img/petemichkawood.png',
       label: 'Перемычка деревянная',
-      category: 'jumper'
+      category: 'jumper',
+      airValue: 1.0
     },
     'phone': {
       width: 40,
       height: 40,
       image: './img/phone.png',
       label: 'Телефон',
-      category: 'phone'
+      category: 'phone',
+      airValue: 1.0
     },
     'equipment': {
       width: 40,
       height: 40,
       image: './img/samohodnoe.png',
       label: 'Самоходное оборудование',
-      category: 'equipment'
+      category: 'equipment',
+      airValue: 1.0
     },
     'entrance': {
       width: 40,
       height: 20,
       image: './img/zapasvhod.png',
       label: 'Запасной вход',
-      category: 'entrance'
+      category: 'entrance',
+      airValue: 1.0
     }
   };
 
   static createObject(type, x, y) {
     const config = this.#objectConfigs[type];
     if (config) {
-      return new ImageObject(type, x, y, config.width, config.height, config.image, config.label);
+      const obj = new ImageObject(type, x, y, config.width, config.height, config.image, config.label);
+      if (config.airValue !== undefined) {
+        obj.setAirValue(config.airValue);
+      }
+      return obj;
     }
     return new CanvasObject('generic', x, y, 50, 50, '#3498db', 'Объект');
   }
@@ -595,7 +637,7 @@ class Editor {
     return linesInfo;
   }
 
-  // НОВЫЙ МЕТОД: Применить правило для tr в точке пересечения
+  // НОВЫЙ МЕТОД: Применить правило для tr в точке пересечения (с учетом airValue объектов)
   applyTrRuleAtIntersectionPoint(point) {
     const linesInfo = this.getLinesAtIntersectionPoint(point);
     const startLines = linesInfo.startLines;
@@ -603,6 +645,30 @@ class Editor {
 
     console.log(`Точка #${point.id}: Началом приходит ${startLines.length} линий, Концом приходит ${endLines.length} линий`);
 
+    // Проверяем, есть ли в точке объект с airValue
+    let objectAirValue = null;
+    point.intersections.forEach(intersection => {
+      if (intersection.type === 'line-object' && intersection.object && intersection.object.airValue) {
+        objectAirValue = intersection.object.airValue;
+        console.log(`В точке #${point.id} найден объект с airValue = ${objectAirValue}`);
+      }
+    });
+
+    // Если есть объект с airValue, используем его для линий, выходящих началом
+    if (objectAirValue !== null && startLines.length > 0) {
+      console.log(`Используем airValue объекта (${objectAirValue}) для линий, выходящих началом из точки #${point.id}`);
+      startLines.forEach(info => {
+        const line = info.line;
+        if (line.tr !== objectAirValue) {
+          console.log(`Устанавливаем tr для линии ${line.id} = ${objectAirValue} (airValue объекта)`);
+          line.tr = objectAirValue;
+          this.trValuesChanged = true;
+        }
+      });
+      return; // Не применяем стандартные правила, если есть объект
+    }
+
+    // Стандартные правила (если нет объекта с airValue):
     // Правило а): одна линия концом и одна линия началом
     if (endLines.length === 1 && startLines.length === 1) {
       const endLine = endLines[0].line;
@@ -653,9 +719,9 @@ class Editor {
     // Для случаев, когда нет линий, приходящих началом - тоже ничего не меняем
   }
 
-  // НОВЫЙ МЕТОД: Пересчитать все значения tr
+  // НОВЫЙ МЕТОД: Пересчитать все значения tr (с учетом airValue объектов)
   recalculateAllTrValues() {
-    console.log('Начинаем пересчет всех значений tr...');
+    console.log('Начинаем пересчет всех значений tr с учетом airValue объектов...');
     this.trValuesChanged = false;
 
     // Сначала устанавливаем значения по умолчанию для линий без tr
@@ -665,7 +731,7 @@ class Editor {
       }
     });
 
-    // Применяем правила для каждой точки пересечения
+    // Применяем правила для каждой точки пересечения (включая учет airValue объектов)
     // Делаем несколько итераций, так как изменения в одной точке могут повлиять на другую
     const maxIterations = 10;
     for (let iteration = 0; iteration < maxIterations; iteration++) {
@@ -865,8 +931,19 @@ class Editor {
             const linesInfo = this.getLinesAtIntersectionPoint(point);
             message += `    Всего линий в точке: началом - ${linesInfo.startLines.length}, концом - ${linesInfo.endLines.length}\n`;
 
+            // Проверяем, есть ли в точке объект с airValue
+            let hasObjectWithAirValue = false;
+            point.intersections.forEach(intersection => {
+              if (intersection.type === 'line-object' && intersection.object && intersection.object.airValue) {
+                hasObjectWithAirValue = true;
+                message += `    В точке есть объект "${intersection.object.label}" с airValue = ${intersection.object.airValue}\n`;
+              }
+            });
+
             // Определяем примененное правило
-            if (linesInfo.endLines.length === 1 && linesInfo.startLines.length === 1) {
+            if (hasObjectWithAirValue && linesInfo.startLines.length > 0) {
+              message += `    Применено правило: использован airValue объекта\n`;
+            } else if (linesInfo.endLines.length === 1 && linesInfo.startLines.length === 1) {
               message += `    Применено правило а): одна линия концом и одна началом\n`;
             } else if (linesInfo.endLines.length === 1 && linesInfo.startLines.length > 1) {
               message += `    Применено правило б): одна линия концом и ${linesInfo.startLines.length} линий началом\n`;
@@ -907,7 +984,13 @@ class Editor {
               pointId: point.id,
               endpoint: intersection.lineEndpoint,
               x: point.x,
-              y: point.y
+              y: point.y,
+              objectInfo: {
+                id: intersection.object.id,
+                label: intersection.object.label,
+                type: intersection.object.type,
+                airValue: intersection.object.airValue
+              }
             });
           }
         });
@@ -933,6 +1016,7 @@ class Editor {
       totalLines: this.lines.length,
       totalIntersections: this.intersectionPoints.length,
       calculationRules: {
+        rule_with_object: "Если в точке есть объект с airValue, то для всех линий, выходящих из этой точки началом, tr устанавливается равным airValue объекта",
         rule_a: "Если в точку приходит одна линия концом и одна линия началом, то tr линии, которая пришла началом, становится равна tr линии, которая пришла концом",
         rule_b: "Если в точку приходит линия с концом и несколько линий с началом, то tr линии, которая пришла концом, делится на количество линий, пришедших началом",
         rule_c: "Если в точку приходит минимум две линии с концом, то их tr суммируются и делятся на количество линий, пришедших началом"
@@ -1073,7 +1157,8 @@ class Editor {
               `Тип: ${this.selectedElement.type}\n` +
               `Координаты: (${this.selectedElement.center.x.toFixed(1)}, ${this.selectedElement.center.y.toFixed(1)})\n` +
               `Размеры: ${this.selectedElement.width} x ${this.selectedElement.height}\n` +
-              `Поворот: ${this.selectedElement.rotation}°`;
+              `Поворот: ${this.selectedElement.rotation}°\n` +
+              `airValue: ${this.selectedElement.airValue}`;
             alert(objInfo);
           }
         } else {
@@ -1400,7 +1485,7 @@ class Editor {
           console.log('Линии были разбиты после добавления новой линии');
         }
 
-        // Обновляем свойства линий (включая пересчет tr)
+        // Обновляем свойства линий (включая пересчет tr с учетом airValue объектов)
         this.updateLineTrackProperties();
 
         this.needsRedraw = true;
@@ -1484,7 +1569,7 @@ class Editor {
       }
     }
 
-    // Пересчитываем значения tr
+    // Пересчитываем значения tr с учетом airValue объектов
     this.recalculateAllTrValues();
   }
 
@@ -1608,7 +1693,7 @@ class Editor {
     this.editingPoint = null;
     this.dragOffset = { x: 0, y: 0 };
 
-    // После перемещения линии пересчитываем пересечения и tr
+    // После перемещения линии пересчитываем пересечения и tr (с учетом airValue объектов)
     this.findIntersections();
     this.recalculateAllTrValues();
   }
@@ -1627,7 +1712,7 @@ class Editor {
         return !hasObjectIntersection;
       });
 
-      // Обновляем свойства линий и пересчитываем tr
+      // Обновляем свойства линий и пересчитываем tr (с учетом оставшихся объектов)
       this.updateLineTrackProperties();
 
       this.hidePropertiesPanel();
@@ -1645,15 +1730,15 @@ class Editor {
       this.intersectionPoints = this.intersectionPoints.filter(point => {
         const hasLineIntersection = point.intersections.some(
           intersection => (intersection.type === 'line-line' &&
-            (intersection.line1Id === lineToDelete.id ||
-              intersection.line2Id === lineToDelete.id)) ||
+              (intersection.line1Id === lineToDelete.id ||
+                intersection.line2Id === lineToDelete.id)) ||
             (intersection.type === 'line-object' &&
               intersection.lineId === lineToDelete.id)
         );
         return !hasLineIntersection;
       });
 
-      // Пересчитываем значения tr
+      // Пересчитываем значения tr с учетом оставшихся объектов
       this.recalculateAllTrValues();
 
       this.hideLinePropertiesPanel();
@@ -1832,7 +1917,7 @@ class Editor {
     // Разбиваем линии по точкам пересечения с объектом
     this.splitLinesWithObject(obj, lineIntersections);
 
-    // Пересчитываем значения tr
+    // Пересчитываем значения tr с учетом нового объекта и его airValue
     this.recalculateAllTrValues();
 
     this.needsRedraw = true;
@@ -1955,7 +2040,7 @@ class Editor {
     this.removeDuplicateIntersectionPoints();
     this.intersectionInfo = this.intersectionPoints.map(point => point.getInfo());
 
-    // Обновляем свойства линий и пересчитываем tr
+    // Обновляем свойства линий и пересчитываем tr с учетом airValue объектов
     this.updateLineTrackProperties();
 
     this.showIntersections = true;
@@ -2242,7 +2327,7 @@ class Editor {
       }
     });
 
-    // Пересчитываем значения tr
+    // Пересчитываем значения tr с учетом airValue объектов
     this.recalculateAllTrValues();
   }
 
@@ -2604,9 +2689,9 @@ class Editor {
         ctx.stroke();
       }
 
-      ctx.fillStyle = 'white';
-      ctx.font = 'bold 18px Arial';
-      ctx.textAlign = 'center';
+      ctx.fillStyle = 'blue';
+      ctx.font = 'bold 8px Arial';
+      ctx.textAlign = 'left';
       ctx.textBaseline = 'bottom';
 
       let label = `${point.id}`;
@@ -2614,7 +2699,7 @@ class Editor {
         label += ` (${point.intersections.length})`;
       }
 
-      ctx.fillText(label, point.x, point.y - (isSelected ? 12 : 8));
+      ctx.fillText(label, point.x + 10, point.y - (isSelected ? 12 : 8));
       ctx.restore();
     });
   }
@@ -2808,17 +2893,20 @@ class Editor {
     }
   }
 
+  // МОДИФИЦИРОВАННЫЙ МЕТОД: Показать панель свойств объекта (с полем airValue)
   showPropertiesPanel(obj) {
     const panel = document.getElementById('propertiesPanel');
     const labelInput = document.getElementById('propertyLabel');
     const widthInput = document.getElementById('propertyWidth');
     const heightInput = document.getElementById('propertyHeight');
+    const airValueInput = document.getElementById('propertyAirValue');
 
-    if (!panel || !labelInput || !widthInput || !heightInput) return;
+    if (!panel || !labelInput || !widthInput || !heightInput || !airValueInput) return;
 
     labelInput.value = obj.label;
     widthInput.value = obj.width;
     heightInput.value = obj.height;
+    airValueInput.value = obj.airValue || 0;
     panel.style.display = 'block';
   }
 
@@ -2859,17 +2947,24 @@ class Editor {
     this.selectedElement = null;
   }
 
+  // МОДИФИЦИРОВАННЫЙ МЕТОД: Применить свойства объекта (включая airValue)
   applyObjectProperties() {
     if (!this.selectedElement) return;
 
     const labelInput = document.getElementById('propertyLabel');
     const widthInput = document.getElementById('propertyWidth');
     const heightInput = document.getElementById('propertyHeight');
+    const airValueInput = document.getElementById('propertyAirValue');
 
-    if (!labelInput || !widthInput || !heightInput) return;
+    if (!labelInput || !widthInput || !heightInput || !airValueInput) return;
 
     this.selectedElement.setLabel(labelInput.value);
     this.selectedElement.setSize(parseInt(widthInput.value), parseInt(heightInput.value));
+    this.selectedElement.setAirValue(airValueInput.value);
+
+    // При изменении airValue объекта пересчитываем tr для всех связанных линий
+    this.recalculateAllTrValues();
+
     this.needsRedraw = true;
     this.redraw();
   }
@@ -2926,10 +3021,24 @@ class Editor {
       message += `Линий приходит концом: ${linesInfo.endLines.length}\n`;
       message += `Линий пересекается серединой: ${linesInfo.middleLines.length}\n\n`;
 
-      message += "Примененные правила для tr:\n";
+      // Проверяем, есть ли в точке объект с airValue
+      let hasObjectWithAirValue = false;
+      let objectAirValue = null;
+      point.intersections.forEach(intersection => {
+        if (intersection.type === 'line-object' && intersection.object && intersection.object.airValue) {
+          hasObjectWithAirValue = true;
+          objectAirValue = intersection.object.airValue;
+          message += `В точке есть объект "${intersection.object.label}" с airValue = ${objectAirValue}\n`;
+        }
+      });
+
+      message += "\nПримененные правила для tr:\n";
 
       // Определяем примененные правила
-      if (linesInfo.endLines.length === 1 && linesInfo.startLines.length === 1) {
+      if (hasObjectWithAirValue && linesInfo.startLines.length > 0) {
+        message += `• Использован airValue объекта: ${objectAirValue}\n`;
+        message += `  Для всех линий, выходящих началом из этой точки, tr установлен = ${objectAirValue}\n`;
+      } else if (linesInfo.endLines.length === 1 && linesInfo.startLines.length === 1) {
         message += `• Правило а): одна линия концом и одна линия началом\n`;
         const endLine = linesInfo.endLines[0].line;
         const startLine = linesInfo.startLines[0].line;
@@ -3005,6 +3114,7 @@ class Editor {
 
     message += `  Объект: ${intersection.object.label}\n`;
     message += `  Тип объекта: ${intersection.object.type}\n`;
+    message += `  airValue объекта: ${intersection.object.airValue}\n`;
     message += `  Сторона объекта: ${intersection.objectSide}\n`;
 
     return message;
@@ -3137,6 +3247,7 @@ class Editor {
               message += `    Тип: пересечение с линией\n`;
             } else if (intersection.type === 'line-object') {
               message += `    Тип: пересечение с объектом "${intersection.object.label}"\n`;
+              message += `    airValue объекта: ${intersection.object.airValue}\n`;
             }
           }
         }
@@ -3160,6 +3271,7 @@ class Editor {
               message += `    Тип: пересечение с линией\n`;
             } else if (intersection.type === 'line-object') {
               message += `    Тип: пересечение с объектом "${intersection.object.label}"\n`;
+              message += `    airValue объекта: ${intersection.object.airValue}\n`;
             }
           }
         }
@@ -3190,6 +3302,7 @@ class Editor {
                 message += `    Тип: пересечение с линией\n`;
               } else if (intersection.type === 'line-object') {
                 message += `    Тип: пересечение с объектом "${intersection.object.label}"\n`;
+                message += `    airValue объекта: ${intersection.object.airValue}\n`;
               }
             }
           }
@@ -3242,6 +3355,7 @@ class Editor {
                 message += `    Тип: пересечение с линией\n`;
               } else if (intersection.type === 'line-object') {
                 message += `    Тип: пересечение с объектом "${intersection.object.label}"\n`;
+                message += `    airValue объекта: ${intersection.object.airValue}\n`;
               }
             }
           }
@@ -3283,6 +3397,21 @@ class Editor {
         lineLine: point.intersections.filter(i => i.type === 'line-line').length,
         lineObject: point.intersections.filter(i => i.type === 'line-object').length
       };
+
+      // Добавляем информацию об объектах в точке
+      const objectsInPoint = [];
+      point.intersections.forEach(intersection => {
+        if (intersection.type === 'line-object' && intersection.object) {
+          objectsInPoint.push({
+            id: intersection.object.id,
+            label: intersection.object.label,
+            type: intersection.object.type,
+            airValue: intersection.object.airValue
+          });
+        }
+      });
+
+      info.objects = objectsInPoint;
       return info;
     });
 
@@ -3405,6 +3534,19 @@ class Editor {
       const element = document.getElementById(id);
       if (element) element.textContent = count;
     });
+  }
+
+  // НОВЫЙ МЕТОД: Для удобства доступа из консоли
+  printAllObjectsWithAirValue() {
+    console.group('📊 Все объекты с airValue:');
+    this.objects.forEach((obj, index) => {
+      console.log(
+        `[${index}] ${obj.label} (${obj.type}): ` +
+        `airValue = ${obj.airValue || 0}, ` +
+        `ID = ${obj.id}`
+      );
+    });
+    console.groupEnd();
   }
 }
 
