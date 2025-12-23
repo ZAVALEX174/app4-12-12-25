@@ -31,10 +31,10 @@ class CanvasObject {
     const angle = this.rotation * Math.PI / 180;
 
     const vertices = [
-      {x: -halfWidth, y: -halfHeight},
-      {x: halfWidth, y: -halfHeight},
-      {x: halfWidth, y: halfHeight},
-      {x: -halfWidth, y: halfHeight}
+      { x: -halfWidth, y: -halfHeight },
+      { x: halfWidth, y: -halfHeight },
+      { x: halfWidth, y: halfHeight },
+      { x: -halfWidth, y: halfHeight }
     ];
 
     return vertices.map(v => {
@@ -185,7 +185,7 @@ class CanvasObject {
 class ImageObject extends CanvasObject {
   constructor(type, x, y, width, height, imageUrl, label = 'Объект') {
     super(type, x, y, width, height, '#3498db', label);
-    this.properties = {imageUrl};
+    this.properties = { imageUrl };
     this.imageLoading = false;
 
     if (imageUrl) {
@@ -512,7 +512,7 @@ class Editor {
     this.isMoving = false;
     this.isEditing = false;
     this.selectedElement = null;
-    this.dragOffset = {x: 0, y: 0};
+    this.dragOffset = { x: 0, y: 0 };
     this.editingPoint = null;
     this.editingLength = false;
     this.lengthEditOverlay = null;
@@ -534,7 +534,7 @@ class Editor {
     this.lastDrawnTempLine = null;
     this.tempLineDrawn = false;
     this.animationFrameId = null;
-    this.mousePos = {x: 0, y: 0};
+    this.mousePos = { x: 0, y: 0 };
 
     // Флаг для отслеживания изменений tr
     this.trValuesChanged = false;
@@ -1025,7 +1025,7 @@ class Editor {
       }
     }, null, 2);
 
-    const blob = new Blob([json], {type: 'application/json'});
+    const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -1310,7 +1310,7 @@ class Editor {
       }
     }
 
-    return {x: snappedX, y: snappedY};
+    return { x: snappedX, y: snappedY };
   }
 
   findClosestPoint(x, y, maxDistance) {
@@ -1422,8 +1422,8 @@ class Editor {
     this.isDrawing = true;
     this.tempLine = {
       id: Date.now() + Math.random(),
-      start: {...pos},
-      end: {...pos},
+      start: { ...pos },
+      end: { ...pos },
       color: this.lineColor,
       width: this.lineWidth,
       lengthLine: this.lengthLine,
@@ -1445,7 +1445,7 @@ class Editor {
     const dy = pos.y - this.tempLine.end.y;
     if (Math.hypot(dx, dy) < 1) return;
 
-    this.tempLine.end = {...pos};
+    this.tempLine.end = { ...pos };
 
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId);
@@ -1661,7 +1661,7 @@ class Editor {
         this.isEditing = true;
         this.editingPoint = distToStart < distToEnd ? 'start' : 'end';
         const targetPoint = this.selectedElement[this.editingPoint];
-        this.dragOffset = {x: pos.x - targetPoint.x, y: pos.y - targetPoint.y};
+        this.dragOffset = { x: pos.x - targetPoint.x, y: pos.y - targetPoint.y };
       } else {
         this.showLinePropertiesPanel(this.selectedElement);
       }
@@ -1693,7 +1693,7 @@ class Editor {
     this.isMoving = false;
     this.isEditing = false;
     this.editingPoint = null;
-    this.dragOffset = {x: 0, y: 0};
+    this.dragOffset = { x: 0, y: 0 };
 
     // После перемещения линии пересчитываем пересечения и tr (с учетом airValue объектов)
     this.findIntersections();
@@ -1732,8 +1732,8 @@ class Editor {
       this.intersectionPoints = this.intersectionPoints.filter(point => {
         const hasLineIntersection = point.intersections.some(
           intersection => (intersection.type === 'line-line' &&
-              (intersection.line1Id === lineToDelete.id ||
-                intersection.line2Id === lineToDelete.id)) ||
+            (intersection.line1Id === lineToDelete.id ||
+              intersection.line2Id === lineToDelete.id)) ||
             (intersection.type === 'line-object' &&
               intersection.lineId === lineToDelete.id)
         );
@@ -1789,7 +1789,7 @@ class Editor {
   }
 
   isPointOnLine(point, line, tolerance = 10) {
-    const {start, end} = line;
+    const { start, end } = line;
     const A = point.x - start.x;
     const B = point.y - start.y;
     const C = end.x - start.x;
@@ -1812,7 +1812,7 @@ class Editor {
       yy = start.y + param * D;
     }
 
-    return this.distance(point, {x: xx, y: yy}) < tolerance;
+    return this.distance(point, { x: xx, y: yy }) < tolerance;
   }
 
   isPointOnLineSegment(point, lineStart, lineEnd, tolerance = 3) {
@@ -1833,7 +1833,7 @@ class Editor {
     const xx = lineStart.x + extendedParam * C;
     const yy = lineStart.y + extendedParam * D;
 
-    return this.distance(point, {x: xx, y: yy}) < tolerance;
+    return this.distance(point, { x: xx, y: yy }) < tolerance;
   }
 
   getLineIntersection(p1, p2, p3, p4) {
@@ -2195,7 +2195,7 @@ class Editor {
       }
     }
 
-    if (!exists) points.push({...point});
+    if (!exists) points.push({ ...point });
   }
 
   splitLinesByPoints(splitPointsMap) {
@@ -2213,9 +2213,9 @@ class Editor {
 
       const points = splitPointsMap.get(line.id);
       const allPoints = [
-        {x: line.start.x, y: line.start.y, isEndpoint: true},
-        ...points.map(p => ({x: p.x, y: p.y, isEndpoint: false})),
-        {x: line.end.x, y: line.end.y, isEndpoint: true}
+        { x: line.start.x, y: line.start.y, isEndpoint: true },
+        ...points.map(p => ({ x: p.x, y: p.y, isEndpoint: false })),
+        { x: line.end.x, y: line.end.y, isEndpoint: true }
       ];
 
       // Сортируем точки по расстоянию от начала
@@ -2233,8 +2233,8 @@ class Editor {
           const newLine = {
             ...line,
             id: Date.now() + Math.random() + i,
-            start: {x: uniquePoints[i].x, y: uniquePoints[i].y},
-            end: {x: uniquePoints[i + 1].x, y: uniquePoints[i + 1].y},
+            start: { x: uniquePoints[i].x, y: uniquePoints[i].y },
+            end: { x: uniquePoints[i + 1].x, y: uniquePoints[i + 1].y },
             track: [],
             endtrack: [],
             passability: {},
@@ -2985,6 +2985,23 @@ class Editor {
     this.selectedElement.roughnessCoef = roughnessCoefInput.value ? parseFloat(roughnessCoefInput.value) : null;
     this.selectedElement.crossSectionalArea = crossSectionalAreaInput.value ? parseFloat(crossSectionalAreaInput.value) : null;
 
+    console.log(this.selectedElement.lengthLine, 'lengthLine');
+    console.log(this.selectedElement.roughnessCoef, 'roughnessCoef');
+    console.log(this.selectedElement.crossSectionalArea, 'crossSectionalArea');
+    console.log(this.selectedElement.tr, 'electedElement.tr');
+
+
+    // 1. расчет периметра
+    let rootOfThePerimeter = Math.sqrt(this.selectedElement.crossSectionalArea);
+    const perimeterCoefficient = 3.8;
+
+    let perimeter = perimeterCoefficient * rootOfThePerimeter;
+    console.log(perimeter);
+
+    // 2. расчет коэф сопротивления
+    let resistanceCoefficient = (this.selectedElement.roughnessCoef * perimeter * this.selectedElement.lengthLine) / this.selectedElement.crossSectionalArea;
+    console.log(resistanceCoefficient, 'resistanceCoefficient');
+
     // Обновляем tr вручную
     if (trInput && trInput.value) {
       const newTr = parseFloat(trInput.value);
@@ -3202,8 +3219,8 @@ class Editor {
   getLineProperties(line) {
     return {
       id: line.id,
-      start: {...line.start},
-      end: {...line.end},
+      start: { ...line.start },
+      end: { ...line.end },
       color: line.color,
       width: line.width,
       lengthLine: line.lengthLine,
@@ -3377,7 +3394,7 @@ class Editor {
     const data = this.lines.map(line => this.getLineProperties(line));
     const json = JSON.stringify(data, null, 2);
 
-    const blob = new Blob([json], {type: 'application/json'});
+    const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -3418,7 +3435,7 @@ class Editor {
 
     const json = JSON.stringify(data, null, 2);
 
-    const blob = new Blob([json], {type: 'application/json'});
+    const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -3495,7 +3512,7 @@ class Editor {
       return;
     }
 
-    const {jsPDF} = window.jspdf;
+    const { jsPDF } = window.jspdf;
     const pdf = new jsPDF();
     const canvas = this.canvas;
     const imgData = canvas.toDataURL('image/png');
